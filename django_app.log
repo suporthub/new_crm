@@ -1464,3 +1464,17 @@ django.urls.exceptions.NoReverseMatch: Reverse for 'admin_calendar' not found. '
 [2025-07-29 18:28:00,591] INFO crm_app.views: Final leads count: 11
 [2025-07-29 18:28:00,613] INFO crm_app.views: === Finishing leads_page view ===
 [2025-07-29 18:29:15,369] WARNING django.request: Not Found: /favicon.ico
+[2025-07-30 10:53:10,995] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 10:53:49,980] WARNING django.request: Not Found: /favicon.ico
+[2025-07-30 10:53:56,274] INFO crm_app.views: === Starting login_user view ===
+[2025-07-30 10:53:56,276] INFO crm_app.views: Login attempt for username: 'INDIA_USER_1' (received from request data)
+[2025-07-30 10:53:56,925] INFO crm_app.views: authenticate() returned User: ID=4, Username='INDIA_USER_1', IsActive=True
+[2025-07-30 10:53:56,925] INFO crm_app.views: Authentication result (overall): Success
+[2025-07-30 10:53:56,925] INFO crm_app.views: Calling django.contrib.auth.login() with User: ID=4, Username='INDIA_USER_1'
+[2025-07-30 10:53:56,957] INFO crm_app.views: After login() call, request.user is: ID=4, Username='INDIA_USER_1'
+[2025-07-30 10:53:56,958] INFO crm_app.views: Session _auth_user_id after login(): 4
+[2025-07-30 10:53:56,958] INFO crm_app.views: Session auth_user_id (custom) after login(): None
+[2025-07-30 10:53:56,963] INFO crm_app.views: Found user profile - Manager username: INDIAmanager
+[2025-07-30 10:53:56,965] INFO crm_app.views: Stored in session - User ID: 4, Manager: INDIAmanager
+[2025-07-30 10:53:56,965] INFO crm_app.views: Login from IP: 127.0.0.1
+[2025-07-30 10:53:57,114] INFO crm_app.views: === Login successful ===

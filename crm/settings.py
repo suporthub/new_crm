@@ -113,14 +113,25 @@ WSGI_APPLICATION = "crm.wsgi.application"
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'crm2',
+#         'USER': 'postgres',
+#         'PASSWORD': 'password',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'crm2',
-        'USER': 'postgres',
-        'PASSWORD': 'password',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'u436589492_crm',
+        'USER': 'u436589492_crm',
+        'PASSWORD': 'Lkj@asd@123',
+        'HOST': '89.117.188.103',  # Or IP address
+        'PORT': '3306',
     }
 }
 

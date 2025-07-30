@@ -693,8 +693,24 @@ class TaskViewSet(viewsets.ModelViewSet):
         if due_date_param:
             queryset = queryset.filter(due_date__date=due_date_param)
         
-        # Date range filtering for calendar view
+        # Date range filtering for calendar view (timezone-aware & full-day inclusive)
         if due_date_start_param and due_date_end_param:
+            from datetime import datetime, time as dt_time
+            from django.utils.dateparse import parse_date
+            from django.utils.timezone import make_aware, get_default_timezone, is_naive
+
+            start_date_obj = parse_date(due_date_start_param)
+            end_date_obj = parse_date(due_date_end_param)
+            if start_date_obj and end_date_obj:
+                tz = get_default_timezone()
+                start_dt = datetime.combine(start_date_obj, dt_time.min)
+                end_dt = datetime.combine(end_date_obj, dt_time.max)
+                # Make timezone-aware if naive
+                if is_naive(start_dt):
+                    start_dt = make_aware(start_dt, tz)
+                if is_naive(end_dt):
+                    end_dt = make_aware(end_dt, tz)
+                queryset = queryset.filter(due_date__range=(start_dt, end_dt))
             queryset = queryset.filter(
                 due_date__date__gte=due_date_start_param,
                 due_date__date__lte=due_date_end_param

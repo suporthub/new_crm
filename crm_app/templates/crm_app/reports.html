@@ -1,0 +1,631 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Reports - LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Reports</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Report Categories</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="report-tabs" role="tablist">
+                        <a class="list-group-item list-group-item-action active" id="sales-tab" data-bs-toggle="list" href="#sales" role="tab">
+                            <i class="fas fa-chart-line me-2"></i> Sales Reports
+                        </a>
+                        <a class="list-group-item list-group-item-action" id="leads-tab" data-bs-toggle="list" href="#leads" role="tab">
+                            <i class="fas fa-user-plus me-2"></i> Lead Reports
+                        </a>
+                        <a class="list-group-item list-group-item-action" id="activities-tab" data-bs-toggle="list" href="#activities" role="tab">
+                            <i class="fas fa-tasks me-2"></i> Activity Reports
+                        </a>
+                        <a class="list-group-item list-group-item-action" id="accounts-tab" data-bs-toggle="list" href="#accounts" role="tab">
+                            <i class="fas fa-building me-2"></i> Account Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Sales Reports -->
+                <div class="tab-pane fade show active" id="sales" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Sales Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Sales by Stage</h6>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-filter"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="#" data-period="month">This Month</a></li>
+                                                    <li><a class="dropdown-item" href="#" data-period="quarter">This Quarter</a></li>
+                                                    <li><a class="dropdown-item" href="#" data-period="year">This Year</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="sales-by-stage-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Sales Trend</h6>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-filter"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="#" data-period="month">Last 6 Months</a></li>
+                                                    <li><a class="dropdown-item" href="#" data-period="quarter">Last 4 Quarters</a></li>
+                                                    <li><a class="dropdown-item" href="#" data-period="year">Last 3 Years</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="sales-trend-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Sales by Owner</h6>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-filter"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="#" data-period="month">This Month</a></li>
+                                                    <li><a class="dropdown-item" href="#" data-period="quarter">This Quarter</a></li>
+                                                    <li><a class="dropdown-item" href="#" data-period="year">This Year</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="sales-by-owner-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lead Reports -->
+                <div class="tab-pane fade" id="leads" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Lead Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Leads by Status</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="leads-by-status-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Leads by Source</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="leads-by-source-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Lead Conversion Rate</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="lead-conversion-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Reports -->
+                <div class="tab-pane fade" id="activities" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Activity Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Tasks by Status</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="tasks-by-status-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Tasks by Priority</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="tasks-by-priority-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Activities by User</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="activities-by-user-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Account Reports -->
+                <div class="tab-pane fade" id="accounts" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Account Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Accounts by Type</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="accounts-by-type-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Accounts by Industry</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="accounts-by-industry-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Account Revenue Distribution</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="account-revenue-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Load reports data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSalesReports();
+        
+        // Set up tab change event
+        document.querySelectorAll('#report-tabs a').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                const targetId = e.target.getAttribute('href').substring(1);
+                switch (targetId) {
+                    case 'sales': loadSalesReports(); break;
+                    case 'leads': loadLeadReports(); break;
+                    case 'activities': loadActivityReports(); break;
+                    case 'accounts': loadAccountReports(); break;
+                }
+            });
+        });
+    });
+    
+    // Load sales reports
+    async function loadSalesReports() {
+        // Sales by Stage
+        const salesByStageData = await apiRequest('reports/sales-by-stage/');
+        if (salesByStageData) {
+            createSalesByStageChart(salesByStageData);
+        }
+        
+        // Sales Trend
+        const salesTrendData = await apiRequest('reports/sales-trend/');
+        if (salesTrendData) {
+            createSalesTrendChart(salesTrendData);
+        }
+        
+        // Sales by Owner
+        const salesByOwnerData = await apiRequest('reports/sales-by-owner/');
+        if (salesByOwnerData) {
+            createSalesByOwnerChart(salesByOwnerData);
+        }
+    }
+    
+    // Load lead reports
+    async function loadLeadReports() {
+        // Leads by Status
+        const leadsByStatusData = await apiRequest('reports/leads-by-status/');
+        if (leadsByStatusData) {
+            createLeadsByStatusChart(leadsByStatusData);
+        }
+        
+        // Leads by Source
+        const leadsBySourceData = await apiRequest('reports/leads-by-source/');
+        if (leadsBySourceData) {
+            createLeadsBySourceChart(leadsBySourceData);
+        }
+        
+        // Lead Conversion Rate
+        const leadConversionData = await apiRequest('reports/lead-conversion/');
+        if (leadConversionData) {
+            createLeadConversionChart(leadConversionData);
+        }
+    }
+    
+    // Load activity reports
+    async function loadActivityReports() {
+        // Tasks by Status
+        const tasksByStatusData = await apiRequest('reports/tasks-by-status/');
+        if (tasksByStatusData) {
+            createTasksByStatusChart(tasksByStatusData);
+        }
+        
+        // Tasks by Priority
+        const tasksByPriorityData = await apiRequest('reports/tasks-by-priority/');
+        if (tasksByPriorityData) {
+            createTasksByPriorityChart(tasksByPriorityData);
+        }
+        
+        // Activities by User
+        const activitiesByUserData = await apiRequest('reports/activities-by-user/');
+        if (activitiesByUserData) {
+            createActivitiesByUserChart(activitiesByUserData);
+        }
+    }
+    
+    // Load account reports
+    async function loadAccountReports() {
+        // Accounts by Type
+        const accountsByTypeData = await apiRequest('reports/accounts-by-type/');
+        if (accountsByTypeData) {
+            createAccountsByTypeChart(accountsByTypeData);
+        }
+        
+        // Accounts by Industry
+        const accountsByIndustryData = await apiRequest('reports/accounts-by-industry/');
+        if (accountsByIndustryData) {
+            createAccountsByIndustryChart(accountsByIndustryData);
+        }
+        
+        // Account Revenue Distribution
+        const accountRevenueData = await apiRequest('reports/account-revenue/');
+        if (accountRevenueData) {
+            createAccountRevenueChart(accountRevenueData);
+        }
+    }
+    
+    // Create Sales by Stage Chart
+    function createSalesByStageChart(data) {
+        // For demo purposes, create sample data if API data is not available
+        if (!data || !data.labels || !data.values) {
+            data = {
+                labels: ['Qualification', 'Needs Analysis', 'Value Proposition', 'Decision Makers', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'],
+                values: [25000, 50000, 75000, 100000, 80000, 60000, 120000, 30000]
+            };
+        }
+        
+        const ctx = document.getElementById('sales-by-stage-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Amount ($)',
+                    data: data.values,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(153, 102, 255, 0.5)',
+                        'rgba(255, 159, 64, 0.5)',
+                        'rgba(201, 203, 207, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 99, 132, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(201, 203, 207, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create Sales Trend Chart
+    function createSalesTrendChart(data) {
+        // For demo purposes, create sample data if API data is not available
+        if (!data || !data.labels || !data.values) {
+            data = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                values: [65000, 59000, 80000, 81000, 56000, 95000]
+            };
+        }
+        
+        const ctx = document.getElementById('sales-trend-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Sales ($)',
+                    data: data.values,
+                    fill: false,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create Sales by Owner Chart
+    function createSalesByOwnerChart(data) {
+        // For demo purposes, create sample data if API data is not available
+        if (!data || !data.labels || !data.values) {
+            data = {
+                labels: ['John Doe', 'Jane Smith', 'Bob Johnson', 'Alice Williams', 'Tom Brown'],
+                values: [120000, 98000, 75000, 110000, 85000]
+            };
+        }
+        
+        const ctx = document.getElementById('sales-by-owner-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Amount ($)',
+                    data: data.values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create Leads by Status Chart
+    function createLeadsByStatusChart(data) {
+        // For demo purposes, create sample data if API data is not available
+        if (!data || !data.labels || !data.values) {
+            data = {
+                labels: ['New', 'Contacted', 'Qualified', 'Unqualified', 'Converted'],
+                values: [45, 30, 25, 15, 35]
+            };
+        }
+        
+        const ctx = document.getElementById('leads-by-status-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.values,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(153, 102, 255, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create other chart functions similarly with sample data for demo purposes
+    // These would be replaced with actual API data in a production environment
+    
+    function createLeadsBySourceChart(data) {
+        // Sample data
+        const ctx = document.getElementById('leads-by-source-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Website', 'Phone', 'Referral', 'Email', 'Social Media', 'Trade Show', 'Other'],
+                datasets: [{
+                    data: [30, 15, 25, 10, 12, 8, 5],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(153, 102, 255, 0.5)',
+                        'rgba(255, 159, 64, 0.5)',
+                        'rgba(201, 203, 207, 0.5)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+    
+    function createLeadConversionChart(data) {
+        // Sample data
+        const ctx = document.getElementById('lead-conversion-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Conversion Rate (%)',
+                    data: [18, 22, 25, 30, 28, 32],
+                    fill: false,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Initialize other charts with sample data when needed
+</script>
+{% endblock %}

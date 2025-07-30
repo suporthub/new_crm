@@ -1,0 +1,315 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}User Details - LiveFxHub CRM Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="h3 mb-0 text-gray-800">User Details</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_users' %}">Users</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">User Details</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Profile Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name={{ user_data.first_name }}+{{ user_data.last_name }}&background=0D8ABC&color=fff&size=128" alt="Profile Avatar" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px;">
+                        <h5 class="mt-3">{{ user_data.first_name }} {{ user_data.last_name }}</h5>
+                        {% if profile %}
+                            {% with role_lower=profile.role|lower %}
+                                {% if role_lower == 'admin' %}
+                                    <span class="badge bg-danger">{{ profile.role|title }}</span>
+                                {% elif role_lower == 'manager' %}
+                                    <span class="badge bg-primary">{{ profile.role|title }}</span>
+                                {% elif role_lower == 'sales' %}
+                                    <span class="badge bg-success">{{ profile.role|title }}</span>
+                                {% else %}
+                                    <span class="badge bg-info">{{ profile.role|title }}</span>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Username</small>
+                            <span>{{ user_data.username }}</span>
+                        </div>
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Email</small>
+                            <span>{{ user_data.email }}</span>
+                        </div>
+                        {% if profile and profile.phone %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Phone</small>
+                            <span>{{ profile.phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if profile and profile.department %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Department</small>
+                            <span>{{ profile.department }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Status</small>
+                            {% if user_data.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </div>
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Date Joined</small>
+                            <span>{{ user_data.date_joined|date:"F d, Y" }}</span>
+                        </div>
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Last Login</small>
+                            <span>{{ user_data.last_login|default:"Never"|date:"F d, Y g:i A" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{% url 'admin_user_edit' user_data.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Edit User
+                        </a>
+                        <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Activity Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Leads Created</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ leads_count }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Deals Created</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ deals_count }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-handshake fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Tasks Created</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tasks_count }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">User Activity Logs</h6>
+                    <div class="btn-group">
+                        <a href="{% url 'admin_user_detail' user_data.id %}" class="btn btn-sm btn-outline-primary {% if not current_log_type %}active{% endif %}">All</a>
+                        <a href="{% url 'admin_user_detail' user_data.id %}?log_type=login" class="btn btn-sm btn-outline-primary {% if current_log_type == 'login' %}active{% endif %}">Login</a>
+                        <a href="{% url 'admin_user_detail' user_data.id %}?log_type=view" class="btn btn-sm btn-outline-primary {% if current_log_type == 'view' %}active{% endif %}">View</a>
+                        <a href="{% url 'admin_user_detail' user_data.id %}?log_type=create" class="btn btn-sm btn-outline-primary {% if current_log_type == 'create' %}active{% endif %}">Create</a>
+                        <a href="{% url 'admin_user_detail' user_data.id %}?log_type=update" class="btn btn-sm btn-outline-primary {% if current_log_type == 'update' %}active{% endif %}">Update</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if activity_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Date & Time</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in activity_logs %}
+                                <tr>
+                                    <td>
+                                        {% if log.action_type == 'login' %}
+                                            <span class="badge bg-primary">Login</span>
+                                        {% elif log.action_type == 'logout' %}
+                                            <span class="badge bg-secondary">Logout</span>
+                                        {% elif log.action_type == 'create' %}
+                                            <span class="badge bg-success">Create</span>
+                                        {% elif log.action_type == 'update' %}
+                                            <span class="badge bg-info">Update</span>
+                                        {% elif log.action_type == 'delete' %}
+                                            <span class="badge bg-danger">Delete</span>
+                                        {% elif log.action_type == 'view' %}
+                                            <span class="badge bg-warning">View</span>
+                                        {% else %}
+                                            <span class="badge bg-dark">Other</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ log.action_detail }}
+                                        {% if log.model_affected %}
+                                            <small class="text-muted d-block">{{ log.model_affected }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.timestamp|date:"M d, Y H:i:s" }} ({{ log.timestamp|time:"T" }})</td>
+                                    <td>{{ log.ip_address|default:"N/A" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <p class="mb-0">No activity logs found for this user.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for activity in recent_activity %}
+                        <div class="timeline-item">
+                            <div class="timeline-item-content">
+                                <span class="tag">
+                                    {% if activity.type == 'lead' %}
+                                        <i class="fas fa-user-plus text-primary"></i>
+                                    {% elif activity.type == 'deal' %}
+                                        <i class="fas fa-handshake text-success"></i>
+                                    {% elif activity.type == 'task' %}
+                                        <i class="fas fa-tasks text-info"></i>
+                                    {% else %}
+                                        <i class="fas fa-history"></i>
+                                    {% endif %}
+                                </span>
+                                <time>{{ activity.timestamp|timesince }} ago</time>
+                                <p>{{ activity.action }} - {{ activity.target }}</p>
+                                <span class="circle"></span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle fa-2x mb-3 text-info"></i>
+                            <p>No recent activity found for this user.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        margin: 20px 0;
+        padding: 0;
+        position: relative;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background-color: #e3e6f0;
+    }
+    
+    .timeline-item {
+        margin: 0 0 20px 0;
+        position: relative;
+    }
+    
+    .timeline-item-content {
+        margin-left: 40px;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #f8f9fc;
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    }
+    
+    .timeline-item-content .tag {
+        color: #4e73df;
+        margin-right: 10px;
+    }
+    
+    .timeline-item-content time {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .timeline-item-content p {
+        margin: 10px 0 0 0;
+    }
+    
+    .timeline-item-content .circle {
+        background-color: #4e73df;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        position: absolute;
+        left: -45px;
+        top: 18px;
+        border: 2px solid white;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,913 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Task Management - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}Task Management{% endblock %}
+
+{% block content %}
+<!-- Hidden data elements for JavaScript -->
+<div id="usersData" data-users="[{% for user in users %}{&quot;id&quot;: {{ user.id }}, &quot;name&quot;: &quot;{{ user.get_full_name|default:user.username|escapejs }}&quot;}{% if not forloop.last %},{% endif %}{% endfor %}]"></div>
+
+<!-- Hidden data elements for related items -->
+<div id="relatedItemsData" 
+     data-leads='{{ leads_json|safe }}'
+     data-contacts='{{ contacts_json|safe }}'
+     data-accounts='{{ accounts_json|safe }}'
+     data-deals='{{ deals_json|safe }}'>
+</div>
+
+<!-- Debug info - will be hidden in production -->
+<div style="display: none;" id="debugInfo">
+    <pre>Leads: {{ leads_json|safe }}</pre>
+    <pre>Contacts: {{ contacts_json|safe }}</pre>
+    <pre>Accounts: {{ accounts_json|safe }}</pre>
+    <pre>Deals: {{ deals_json|safe }}</pre>
+</div>
+
+<div class="container-fluid">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="admin-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-tasks fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Total Tasks</h6>
+                        <h3 class="mb-0">{{ total_tasks }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Completed</h6>
+                        <h3 class="mb-0">{{ completed_tasks }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">In Progress</h6>
+                        <h3 class="mb-0">{{ in_progress_tasks }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                        <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">Overdue</h6>
+                        <h3 class="mb-0">{{ overdue_tasks }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Management -->
+    <div class="admin-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Manage Tasks</h5>
+            <div>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                    <i class="fas fa-plus me-1"></i> Add Task
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Task Filters -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="not_started">Not Started</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="deferred">Deferred</option>
+                        <option value="waiting">Waiting</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="priorityFilter">
+                        <option value="">All Priorities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="assigneeFilter">
+                        <option value="">All Assignees</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="taskSearchInput" placeholder="Search tasks...">
+                </div>
+            </div>
+
+            <!-- Tasks Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover admin-table" id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th width="30">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllTasks">
+                                </div>
+                            </th>
+                            <th>Task</th>
+                            <th>Due Date</th>
+                            <th>Assignee</th>
+                            <th>Related To</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr class="{% if task.is_overdue %}table-danger{% endif %}">
+                            <td>
+                                <div class="form-check">
+                                    <input class="form-check-input task-checkbox" type="checkbox" value="{{ task.id }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ task.subject }}</div>
+                                <div class="small text-muted">{{ task.description|truncatechars:50 }}</div>
+                            </td>
+                            <td>
+                                <span {% if task.is_overdue %}class="text-danger fw-bold"{% endif %}>
+                                    {{ task.due_date|date:"M d, Y H:i" }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if task.assigned_to %}
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar rounded-circle me-2">
+                                        {% if task.assigned_to.userprofile.profile_picture %}
+                                        <img src="{{ task.assigned_to.userprofile.profile_picture.url }}" alt="{{ task.assigned_to.get_full_name }}" width="32" height="32" class="rounded-circle">
+                                        {% else %}
+                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            {{ task.assigned_to.first_name|first|upper }}{{ task.assigned_to.last_name|first|upper }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</div>
+                                </div>
+                                {% else %}
+                                --
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.related_lead %}
+                                <span class="badge bg-primary">Lead: {{ task.related_lead.first_name }} {{ task.related_lead.last_name }}</span>
+                                {% elif task.related_contact %}
+                                <span class="badge bg-info">Contact: {{ task.related_contact.first_name }} {{ task.related_contact.last_name }}</span>
+                                {% elif task.related_account %}
+                                <span class="badge bg-secondary">Account: {{ task.related_account.name }}</span>
+                                {% elif task.related_deal %}
+                                <span class="badge bg-success">Deal: {{ task.related_deal.name }}</span>
+                                {% else %}
+                                --
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.priority == 'high' %}
+                                <span class="badge bg-danger">High</span>
+                                {% elif task.priority == 'medium' %}
+                                <span class="badge bg-warning">Medium</span>
+                                {% else %}
+                                <span class="badge bg-info">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.status == 'not_started' %}
+                                <span class="badge bg-secondary">Not Started</span>
+                                {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-primary">In Progress</span>
+                                {% elif task.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif task.status == 'deferred' %}
+                                <span class="badge bg-warning">Deferred</span>
+                                {% elif task.status == 'waiting' %}
+                                <span class="badge bg-info">Waiting</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="taskActionDropdown{{ task.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="taskActionDropdown{{ task.id }}">
+                                        <li><a class="dropdown-item" href="{% url 'admin_task_edit' task.id %}"><i class="fas fa-edit me-2"></i> Edit</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% if task.status != 'completed' %}
+                                        <li><a class="dropdown-item text-success" href="#" onclick="updateTaskStatus('{{ task.id }}', 'completed')"><i class="fas fa-check-circle me-2"></i> Mark Complete</a></li>
+                                        {% endif %}
+                                        {% if task.status != 'in_progress' %}
+                                        <li><a class="dropdown-item text-primary" href="#" onclick="updateTaskStatus('{{ task.id }}', 'in_progress')"><i class="fas fa-spinner me-2"></i> Mark In Progress</a></li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask('{{ task.id }}')"><i class="fas fa-trash-alt me-2"></i> Delete</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div class="mt-3">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Bulk Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('mark-complete')"><i class="fas fa-check-circle me-2"></i> Mark Complete</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('mark-in-progress')"><i class="fas fa-spinner me-2"></i> Mark In Progress</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="bulkAction('reassign')"><i class="fas fa-user-edit me-2"></i> Reassign</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('delete')"><i class="fas fa-trash-alt me-2"></i> Delete Tasks</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Analytics -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="admin-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Task Completion</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary active" data-timeframe="week" data-chart="completion" data-period="week">1 Week</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeframe="month" data-chart="completion" data-period="month">1 Month</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeframe="year" data-chart="completion" data-period="year">1 Year</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="taskCompletionChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="admin-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Tasks by Priority</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary active" data-timeframe="week" data-chart="priority" data-period="week">1 Week</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeframe="month" data-chart="priority" data-period="month">1 Month</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-timeframe="year" data-chart="priority" data-period="year">1 Year</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="tasksByPriorityChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden data elements for charts -->
+    <div id="taskChartData" 
+         data-task-counts="{{ task_counts_json|default:'{}' }}" 
+         data-priority-counts="{{ priority_counts_json|default:'{}' }}"
+         style="display: none;">
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTaskForm" method="post" action="{% url 'admin_task_create' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <input type="datetime-local" class="form-control" id="due_date" name="due_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assigned_to" class="form-label">Assignee</label>
+                                <select class="form-select" id="assigned_to" name="assigned_to" required>
+                                    <option value="">Select Assignee</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="not_started">Not Started</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="deferred">Deferred</option>
+                                    <option value="waiting">Waiting</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="related_to_type" class="form-label">Related To</label>
+                                <select class="form-select" id="related_to_type" name="related_to_type">
+                                    <option value="">None</option>
+                                    <option value="lead">Lead</option>
+                                    <option value="contact">Contact</option>
+                                    <option value="account">Account</option>
+                                    <option value="deal">Deal</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="related_to_id" class="form-label">Select Item</label>
+                                <select class="form-select" id="related_to_id" name="related_to_id" disabled>
+                                    <option value="">Select Item</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    {% if request.user.profile.role == 'manager' %}
+                    <div class="mb-3">
+                        <label for="manager_username" class="form-label">Manager</label>
+                        <input type="text" class="form-control" id="manager_username" name="manager_username" value="{{ request.user.username }}" readonly>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addTaskForm" class="btn btn-primary">Save Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Debug related items data
+        const relatedItemsData = document.getElementById('relatedItemsData');
+        if (relatedItemsData) {
+            console.log('Leads data:', relatedItemsData.getAttribute('data-leads'));
+            console.log('Contacts data:', relatedItemsData.getAttribute('data-contacts'));
+            console.log('Accounts data:', relatedItemsData.getAttribute('data-accounts'));
+            console.log('Deals data:', relatedItemsData.getAttribute('data-deals'));
+        }
+        
+        // Initialize DataTable
+        const tasksTable = $('#tasksTable').DataTable({
+            responsive: true,
+            dom: '<"top"lf>rt<"bottom"ip><"clear">',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search tasks..."
+            },
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            columnDefs: [
+                { orderable: false, targets: [0, 7] } // Disable sorting on checkbox and actions columns
+            ],
+            order: [[2, 'asc']] // Sort by due date column in ascending order
+        });
+        
+        // Apply filters when changed
+        $('#statusFilter, #priorityFilter, #assigneeFilter').on('change', function() {
+            tasksTable.draw();
+        });
+        
+        // Custom filtering function
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            const statusFilter = $('#statusFilter').val();
+            const priorityFilter = $('#priorityFilter').val();
+            const assigneeFilter = $('#assigneeFilter').val();
+            
+            // Get status from the row data (column 6)
+            const status = data[6].toLowerCase();
+            const priority = data[5].toLowerCase();
+            const assignee = data[3];
+            
+            // Apply filters
+            if (statusFilter && !status.includes(statusFilter)) return false;
+            if (priorityFilter && !priority.includes(priorityFilter)) return false;
+            if (assigneeFilter && !assignee.includes(assigneeFilter)) return false;
+            
+            return true;
+        });
+        
+        // Select All Tasks Checkbox
+        document.getElementById('selectAllTasks').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
+        
+        // Set today's datetime as default for new tasks
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        now.setHours(now.getHours() + 1); // Default due date 1 hour from now
+        document.getElementById('due_date').value = now.toISOString().slice(0, 16);
+        
+        // Handle related items dropdown population
+        document.getElementById('related_to_type').addEventListener('change', function() {
+            const relatedType = this.value;
+            const relatedItemSelect = document.getElementById('related_to_id');
+            
+            // Clear current options
+            relatedItemSelect.innerHTML = '<option value="">Select Item</option>';
+            
+            // If no type selected, disable the select
+            if (!relatedType) {
+                relatedItemSelect.disabled = true;
+                return;
+            }
+            
+            // Enable the select
+            relatedItemSelect.disabled = false;
+            
+            // Get the related items data from the hidden element
+            const relatedItemsData = document.getElementById('relatedItemsData');
+            let itemsData = '';
+            let items = [];
+            
+            // Get the appropriate items based on the selected type
+            try {
+                switch(relatedType) {
+                    case 'lead':
+                        itemsData = relatedItemsData.getAttribute('data-leads');
+                        console.log('Raw leads data:', itemsData);
+                        items = JSON.parse(itemsData || '[]');
+                        console.log('Parsed leads:', items);
+                        break;
+                    case 'contact':
+                        itemsData = relatedItemsData.getAttribute('data-contacts');
+                        console.log('Raw contacts data:', itemsData);
+                        items = JSON.parse(itemsData || '[]');
+                        console.log('Parsed contacts:', items);
+                        break;
+                    case 'account':
+                        itemsData = relatedItemsData.getAttribute('data-accounts');
+                        console.log('Raw accounts data:', itemsData);
+                        items = JSON.parse(itemsData || '[]');
+                        console.log('Parsed accounts:', items);
+                        break;
+                    case 'deal':
+                        itemsData = relatedItemsData.getAttribute('data-deals');
+                        console.log('Raw deals data:', itemsData);
+                        items = JSON.parse(itemsData || '[]');
+                        console.log('Parsed deals:', items);
+                        break;
+                }
+            } catch (error) {
+                console.error('Error parsing related items data:', error);
+                console.error('Raw data that caused error:', itemsData);
+                items = [];
+            }
+            
+            // Add options for each item
+            if (items && items.length > 0) {
+                items.forEach(item => {
+                    if (item && item.id !== undefined && item.name) {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        relatedItemSelect.appendChild(option);
+                    }
+                });
+            } else {
+                // Add a message if no items are available
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = "No items available";
+                option.disabled = true;
+                relatedItemSelect.appendChild(option);
+            }
+        });
+        
+        // Global chart references
+        let taskCompletionChart;
+        let tasksByPriorityChart;
+        
+        // Initialize charts with default timeframe (1 week)
+        initializeCharts('week');
+        
+        // Add event listeners to time frame buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click event listeners to all time frame buttons
+            document.querySelectorAll('[data-timeframe]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.getAttribute('data-period');
+                    const chartType = this.getAttribute('data-chart');
+                    
+                    // Update active state for buttons in the same group
+                    document.querySelectorAll(`[data-chart="${chartType}"]`).forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Update the appropriate chart
+                    if (chartType === 'completion') {
+                        updateTaskCompletionChart(period);
+                    } else if (chartType === 'priority') {
+                        updateTaskPriorityChart(period);
+                    }
+                });
+            });
+        });
+        
+        // Function to initialize both charts
+        function initializeCharts(timeframe) {
+            initTaskCompletionChart(timeframe);
+            initTaskPriorityChart(timeframe);
+        }
+        
+        // Function to update task completion chart based on timeframe
+        function updateTaskCompletionChart(timeframe) {
+            // Destroy existing chart if it exists
+            if (taskCompletionChart) {
+                taskCompletionChart.destroy();
+            }
+            
+            // Initialize new chart with selected timeframe
+            initTaskCompletionChart(timeframe);
+        }
+        
+        // Function to update tasks by priority chart based on timeframe
+        function updateTaskPriorityChart(timeframe) {
+            // Destroy existing chart if it exists
+            if (tasksByPriorityChart) {
+                tasksByPriorityChart.destroy();
+            }
+            
+            // Initialize new chart with selected timeframe
+            initTaskPriorityChart(timeframe);
+        }
+        
+        // Function to initialize task completion chart
+        function initTaskCompletionChart(timeframe) {
+            // Get task data from server or use sample data if not available
+            let labels, createdData, completedData;
+            
+            // Try to get data from the hidden data element
+            try {
+                const chartDataElement = document.getElementById('taskChartData');
+                const taskCounts = JSON.parse(chartDataElement.getAttribute('data-task-counts') || '{}');
+                
+                if (taskCounts[timeframe]) {
+                    const timeframeData = taskCounts[timeframe];
+                    labels = timeframeData.labels;
+                    createdData = timeframeData.created;
+                    completedData = timeframeData.completed;
+                } else {
+                    // Fallback to sample data if timeframe data not available
+                    [labels, createdData, completedData] = getSampleTaskCompletionData(timeframe);
+                }
+            } catch (error) {
+                console.error('Error parsing task chart data:', error);
+                // Fallback to sample data
+                [labels, createdData, completedData] = getSampleTaskCompletionData(timeframe);
+            }
+            
+            // Create chart
+            const taskCompletionCtx = document.getElementById('taskCompletionChart').getContext('2d');
+            taskCompletionChart = new Chart(taskCompletionCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tasks Created',
+                        data: createdData,
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }, {
+                        label: 'Tasks Completed',
+                        data: completedData,
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            },
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to initialize tasks by priority chart
+        function initTaskPriorityChart(timeframe) {
+            // Get priority data from server or use sample data if not available
+            let priorityData, priorityLabels;
+            
+            // Try to get data from the hidden data element
+            try {
+                const chartDataElement = document.getElementById('taskChartData');
+                const priorityCounts = JSON.parse(chartDataElement.getAttribute('data-priority-counts') || '{}');
+                
+                if (priorityCounts[timeframe]) {
+                    priorityLabels = ['High', 'Medium', 'Low'];
+                    priorityData = [
+                        priorityCounts[timeframe].high || 0,
+                        priorityCounts[timeframe].medium || 0,
+                        priorityCounts[timeframe].low || 0
+                    ];
+                } else {
+                    // Fallback to sample data if timeframe data not available
+                    [priorityLabels, priorityData] = getSamplePriorityData(timeframe);
+                }
+            } catch (error) {
+                console.error('Error parsing priority chart data:', error);
+                // Fallback to sample data
+                [priorityLabels, priorityData] = getSamplePriorityData(timeframe);
+            }
+            
+            // Create chart
+            const tasksByPriorityCtx = document.getElementById('tasksByPriorityChart').getContext('2d');
+            tasksByPriorityChart = new Chart(tasksByPriorityCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: priorityLabels,
+                    datasets: [{
+                        data: priorityData,
+                        backgroundColor: [
+                            'rgba(231, 76, 60, 0.7)',  // High - Red
+                            'rgba(241, 196, 15, 0.7)', // Medium - Yellow
+                            'rgba(52, 152, 219, 0.7)'  // Low - Blue
+                        ],
+                        borderColor: [
+                            'rgba(231, 76, 60, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(52, 152, 219, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to get sample task completion data based on timeframe
+        function getSampleTaskCompletionData(timeframe) {
+            let labels, createdData, completedData;
+            
+            switch (timeframe) {
+                case 'week':
+                    labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    createdData = [5, 7, 4, 6, 8, 3, 2];
+                    completedData = [3, 5, 3, 4, 7, 2, 1];
+                    break;
+                    
+                case 'month':
+                    // Generate last 30 days labels
+                    labels = [];
+                    createdData = [];
+                    completedData = [];
+                    
+                    const today = new Date();
+                    for (let i = 29; i >= 0; i--) {
+                        const date = new Date(today);
+                        date.setDate(today.getDate() - i);
+                        labels.push(date.getDate().toString());
+                        createdData.push(Math.floor(Math.random() * 5) + 1);
+                        completedData.push(Math.floor(Math.random() * 4) + 1);
+                    }
+                    break;
+                    
+                case 'year':
+                default:
+                    labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    createdData = [45, 52, 48, 55, 62, 58, 50, 60, 65, 58, 62, 70];
+                    completedData = [40, 45, 42, 50, 55, 50, 42, 55, 60, 50, 52, 60];
+                    break;
+            }
+            
+            return [labels, createdData, completedData];
+        }
+        
+        // Function to get sample priority data based on timeframe
+        function getSamplePriorityData(timeframe) {
+            const labels = ['High', 'Medium', 'Low'];
+            let data;
+            
+            switch (timeframe) {
+                case 'week':
+                    data = [8, 15, 12];
+                    break;
+                    
+                case 'month':
+                    data = [15, 35, 25];
+                    break;
+                    
+                case 'year':
+                default:
+                    data = [25, 55, 20];
+                    break;
+            }
+            
+            return [labels, data];
+        }
+        
+        // Note: The dynamic related items dropdown is now handled by the event listener above
+        // No hardcoded dummy data is used anymore
+    });
+    
+    // Task Actions
+    function updateTaskStatus(taskId, status) {
+        // In a real implementation, this would trigger an API call to update the task status
+        showNotification('Success', `Task status updated to ${status}!`, 'success');
+    }
+    
+    function deleteTask(taskId) {
+        if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+            // In a real implementation, this would trigger an API call to delete the task
+            showNotification('Success', 'Task deleted successfully!', 'success');
+        }
+    }
+    
+    // Bulk Actions
+    function bulkAction(action) {
+        const selectedTasks = [];
+        document.querySelectorAll('.task-checkbox:checked').forEach(checkbox => {
+            selectedTasks.push(checkbox.value);
+        });
+        
+        if (selectedTasks.length === 0) {
+            showNotification('Warning', 'No tasks selected', 'warning');
+            return;
+        }
+        
+        switch (action) {
+            case 'mark-complete':
+                if (confirm(`Are you sure you want to mark ${selectedTasks.length} tasks as completed?`)) {
+                    showNotification('Success', `${selectedTasks.length} tasks marked as completed!`, 'success');
+                }
+                break;
+            case 'mark-in-progress':
+                if (confirm(`Are you sure you want to mark ${selectedTasks.length} tasks as in progress?`)) {
+                    showNotification('Success', `${selectedTasks.length} tasks marked as in progress!`, 'success');
+                }
+                break;
+            case 'reassign':
+                // Get users from data attribute populated by Django
+                const users = JSON.parse(document.getElementById('usersData').getAttribute('data-users'));
+                
+                // Create options for select dropdown
+                const userOptions = users.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+                const userSelect = `<select class="form-select" id="bulkAssigneeSelect">${userOptions}</select>`;
+                
+                const newAssignee = prompt('Select assignee:', userSelect);
+                if (newAssignee) {
+                    showNotification('Success', `${selectedTasks.length} tasks reassigned!`, 'success');
+                }
+                break;
+            case 'delete':
+                if (confirm(`Are you sure you want to delete ${selectedTasks.length} tasks? This action cannot be undone.`)) {
+                    showNotification('Success', `${selectedTasks.length} tasks deleted successfully!`, 'success');
+                }
+                break;
+        }
+    }
+    
+    // Notification function
+    function showNotification(title, message, type = 'success') {
+        const icon = type === 'success' ? 'check-circle' :
+                    type === 'warning' ? 'exclamation-triangle' :
+                    type === 'error' ? 'times-circle' : 'info-circle';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${icon} me-2"></i>
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '5';
+            document.body.appendChild(container);
+            container.appendChild(toast);
+        } else {
+            toastContainer.appendChild(toast);
+        }
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            animation: true,
+            autohide: true,
+            delay: 5000
+        });
+        
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

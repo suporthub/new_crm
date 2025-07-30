@@ -1,0 +1,190 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Edit User - LiveFxHub CRM Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="h3 mb-0 text-gray-800">Edit User</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_users' %}">Users</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit User</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Edit User Details</h6>
+                    <a href="{% url 'admin_users' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Users
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'admin_user_edit' user_data.id %}">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="alert alert-info">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" value="{{ user_data.username }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user_data.email }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user_data.first_name }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user_data.last_name }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Role</label>
+                                    <select class="form-select" id="role" name="role">
+                                        {% if request.user.profile.role != 'manager' %}
+                                            <option value="admin" {% if profile.role == 'admin' %}selected{% endif %}>Admin</option>
+                                            <option value="manager" {% if profile.role == 'manager' %}selected{% endif %}>Manager</option>
+                                        {% endif %}
+                                        <option value="sales" {% if profile.role == 'sales' %}selected{% endif %}>Sales</option>
+                                        <option value="support" {% if profile.role == 'support' %}selected{% endif %}>Support</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">Department</label>
+                                    <input type="text" class="form-control" id="department" name="department" value="{{ profile.department|default:'' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" value="{{ profile.phone|default:'' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="active" {% if user_data.is_active %}selected{% endif %}>Active</option>
+                                        <option value="inactive" {% if not user_data.is_active %}selected{% endif %}>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">New Password (leave blank to keep current)</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="password" name="password">
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="far fa-eye" id="toggleIcon"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Minimum 8 characters, include numbers and special characters for better security</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                            <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password visibility toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // Toggle the eye icon
+            toggleIcon.classList.toggle('fa-eye');
+            toggleIcon.classList.toggle('fa-eye-slash');
+        });
+        
+        // User edit form submission
+        const userForm = document.querySelector('form[action*="admin_user_edit"]');
+        if (userForm) {
+            userForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const userId = '{{ user_data.id }}';
+                
+                // Convert formData to JSON object
+                const userData = {};
+                formData.forEach((value, key) => {
+                    userData[key] = value;
+                });
+                
+                // Don't include empty password in the update
+                if (userData.password === '') {
+                    delete userData.password;
+                }
+                
+                // Make authenticated API call to update user
+                apiAuth.fetchAPI(`/api/users/${userId}/`, 'PUT', userData)
+                    .then(data => {
+                        // Show success message
+                        alert('User updated successfully!');
+                        // Refresh the page to show updated data
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        try {
+                            const errorData = JSON.parse(error.message);
+                            let errorMessage = 'Error updating user: ';
+                            
+                            // Format error messages from the API response
+                            Object.keys(errorData).forEach(key => {
+                                errorMessage += `${key}: ${errorData[key]}\n`;
+                            });
+                            
+                            alert(errorMessage);
+                        } catch (e) {
+                            alert('Error updating user: ' + error.message);
+                        }
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

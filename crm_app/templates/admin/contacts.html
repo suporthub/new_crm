@@ -1,0 +1,553 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Contacts Management - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}Contacts Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Contact Overview</h5>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addContactModal">
+                        <i class="fas fa-plus me-2"></i> Add New Contact
+                    </button>
+                    <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#importContactsModal">
+                        <i class="fas fa-file-import me-2"></i> Import Contacts
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Total Contacts</h6>
+                                <h2 class="mb-0">{{ total_contacts }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">New Contacts (30d)</h6>
+                                <h2 class="mb-0">{{ new_contacts }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">All Contacts</h6>
+                                <h2 class="mb-0">{{ total_contacts }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Contacts with Deals</h6>
+                                <h2 class="mb-0">{{ contacts_with_deals }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="contactSearchInput" placeholder="Search contacts...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="accountFilter">
+                            <option value="">Account (All)</option>
+                            {% for account in accounts %}
+                            <option value="{{ account.id }}">{{ account.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="accountTypeFilter">
+                            <option value="">Account Type (All)</option>
+                            <option value="customer">Customer</option>
+                            <option value="prospect">Prospect</option>
+                            <option value="partner">Partner</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" id="filterBtn">
+                            <i class="fas fa-filter me-2"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover admin-table" id="contactsTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllContacts">
+                                    </div>
+                                </th>
+                                <th>Contact</th>
+                                <th>Account</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Job Title</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contact in contacts %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input contact-checkbox" type="checkbox" value="{{ contact.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% static 'img/default-avatar.png' %}" alt="{{ contact.first_name }} {{ contact.last_name }}" class="rounded-circle me-2" width="40" height="40">
+                                        <div>
+                                            <div class="fw-semibold">{{ contact.first_name }} {{ contact.last_name }}</div>
+                                            <div class="small text-muted">ID: {{ contact.id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if contact.account %}
+                                    <a href="{% url 'admin_account_detail' contact.account.id %}">{{ contact.account.name }}</a>
+                                    {% else %}
+                                    <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ contact.email }}</td>
+                                <td>{{ contact.phone }}</td>
+                                <td>{{ contact.job_title }}</td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        Active
+                                    </span>
+                                </td>
+                                <td>{{ contact.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="contactActionDropdown{{ contact.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="contactActionDropdown{{ contact.id }}">
+                                            <li><a class="dropdown-item" href="{% url 'admin_contact_detail' contact.id %}"><i class="fas fa-eye me-2"></i> View</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'admin_contact_edit' contact.id %}"><i class="fas fa-edit me-2"></i> Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteContact('{{ contact.id }}')"><i class="fas fa-trash-alt me-2"></i> Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Bulk Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('change-account')"><i class="fas fa-building me-2"></i> Change Account</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('change-status')"><i class="fas fa-tag me-2"></i> Change Status</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('delete')"><i class="fas fa-trash-alt me-2"></i> Delete Selected</a></li>
+                        </ul>
+                    </div>
+                    
+                    <a href="#" class="btn btn-outline-primary ms-2" id="exportContactsBtn">
+                        <i class="fas fa-file-export me-2"></i> Export
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">Contacts by Account</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="contactsByAccountChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Contact Growth</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="contactGrowthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div class="modal fade" id="addContactModal" tabindex="-1" aria-labelledby="addContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addContactModalLabel">Add New Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addContactForm" method="post" action="{% url 'admin_contact_create' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="phone" name="phone">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="account" class="form-label">Account</label>
+                            <select class="form-select" id="account" name="account">
+                                <option value="">-- No Account --</option>
+                                {% for account in accounts %}
+                                <option value="{{ account.id }}">{{ account.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="job_title" class="form-label">Job Title</label>
+                            <input type="text" class="form-control" id="job_title" name="job_title">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_type" class="form-label">Contact Type</label>
+                            <select class="form-select" id="contact_type" name="contact_type">
+                                <option value="primary" selected>Primary</option>
+                                <option value="secondary">Secondary</option>
+                                <option value="decision_maker">Decision Maker</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addContactForm" class="btn btn-primary">Save Contact</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Contacts Modal -->
+<div class="modal fade" id="importContactsModal" tabindex="-1" aria-labelledby="importContactsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importContactsModalLabel">Import Contacts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importContactsForm" method="post" action="{% url 'admin_contact_import' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="import_file" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="import_file" name="import_file" accept=".csv" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="header_row" name="header_row" checked>
+                        <label class="form-check-label" for="header_row">
+                            First row contains headers
+                        </label>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">CSV Format</h6>
+                        <p class="mb-0">Your CSV file should have the following columns:</p>
+                        <ul class="mb-0">
+                            <li>first_name</li>
+                            <li>last_name</li>
+                            <li>email</li>
+                            <li>phone (optional)</li>
+                            <li>account_id (optional)</li>
+                            <li>job_title (optional)</li>
+                            <li>status</li>
+                            <li>notes (optional)</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <a href="{% url 'admin_download_contact_template' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-2"></i> Download Template
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="importContactsForm" class="btn btn-primary">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        const contactsTable = $('#contactsTable').DataTable({
+            responsive: true,
+            dom: '<"top"lf>rt<"bottom"ip><"clear">',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search contacts..."
+            },
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            columnDefs: [
+                { orderable: false, targets: [0, 8] } // Disable sorting on checkbox and actions columns
+            ]
+        });
+        
+        // Contacts by Account Chart
+        const contactsByAccountCtx = document.getElementById('contactsByAccountChart').getContext('2d');
+        const contactsByAccountChart = new Chart(contactsByAccountCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Acme Inc', 'Globex Corp', 'Wayne Enterprises', 'Stark Industries', 'Umbrella Corp'],
+                datasets: [{
+                    label: 'Number of Contacts',
+                    data: [25, 18, 15, 12, 10],
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Contact Growth Chart
+        const contactGrowthCtx = document.getElementById('contactGrowthChart').getContext('2d');
+        const contactGrowthChart = new Chart(contactGrowthCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'New Contacts',
+                    data: [8, 12, 15, 10, 18, 20, 16, 22, 25, 18, 15, 20],
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Select All Contacts Checkbox
+        document.getElementById('selectAllContacts').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
+        
+        // Filter Button
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            const searchValue = document.getElementById('contactSearchInput').value.toLowerCase();
+            const accountFilter = document.getElementById('accountFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+            
+            // Reset DataTable search and draw with new search value
+            contactsTable.search(searchValue).draw();
+            
+            // Apply custom filtering for account and status
+            // Note: In a real implementation, you would likely use server-side filtering
+            // or DataTables API for custom column filtering
+            showNotification('Info', 'Filters applied', 'info');
+        });
+        
+        // Export Contacts Button
+        document.getElementById('exportContactsBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // In a real implementation, this would trigger an API call to export the contacts
+            showNotification('Success', 'Contacts exported successfully!', 'success');
+            
+            // Simulate file download
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.download = 'contacts_export.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }, 1000);
+        });
+    });
+    
+    // Contact Actions
+    function deleteContact(contactId) {
+        if (confirm('Are you sure you want to delete this contact? This action cannot be undone.')) {
+            // In a real implementation, this would trigger an API call to delete the contact
+            showNotification('Success', 'Contact deleted successfully!', 'success');
+        }
+    }
+    
+    // Bulk Actions
+    function bulkAction(action) {
+        const selectedContacts = [];
+        document.querySelectorAll('.contact-checkbox:checked').forEach(checkbox => {
+            selectedContacts.push(checkbox.value);
+        });
+        
+        if (selectedContacts.length === 0) {
+            showNotification('Warning', 'No contacts selected', 'warning');
+            return;
+        }
+        
+        switch (action) {
+            case 'change-account':
+                // Show account change modal or dropdown
+                showNotification('Info', `Changing account for ${selectedContacts.length} contacts`, 'info');
+                break;
+            case 'change-status':
+                // Show status change modal or dropdown
+                showNotification('Info', `Changing status for ${selectedContacts.length} contacts`, 'info');
+                break;
+            case 'delete':
+                if (confirm(`Are you sure you want to delete ${selectedContacts.length} contacts? This action cannot be undone.`)) {
+                    showNotification('Success', `${selectedContacts.length} contacts deleted successfully!`, 'success');
+                }
+                break;
+        }
+    }
+    
+    // Notification function (same as in other templates)
+    function showNotification(title, message, type = 'success') {
+        const icon = type === 'success' ? 'check-circle' :
+                    type === 'warning' ? 'exclamation-triangle' :
+                    type === 'error' ? 'times-circle' : 'info-circle';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${icon} me-2"></i>
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '5';
+            document.body.appendChild(container);
+            container.appendChild(toast);
+        } else {
+            toastContainer.appendChild(toast);
+        }
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            animation: true,
+            autohide: true,
+            delay: 5000
+        });
+        
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

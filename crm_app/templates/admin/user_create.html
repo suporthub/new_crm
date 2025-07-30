@@ -1,0 +1,308 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Create New User - LiveFxHub CRM Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="h3 mb-0 text-gray-800">Create New User</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_users' %}">Users</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Create User</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">User Information</h6>
+                    <a href="{% url 'admin_users' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Users
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'admin_user_create' %}">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="alert alert-info">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                    <small class="text-muted">Must be unique, alphanumeric characters only</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="">Select a role</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="sales">Sales</option>
+                                        <option value="support">Support</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">Department</label>
+                                    <input type="text" class="form-control" id="department" name="department">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="active" selected>Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                
+                                {% if request.user.profile.role == 'manager' %}
+                                <div class="mb-3">
+                                    <label for="manager_username" class="form-label">Manager</label>
+                                    <input type="text" class="form-control" id="manager_username" name="manager_username" value="{{ request.user.username }}" readonly>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="password" name="password" required>
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="far fa-eye" id="toggleIcon"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Minimum 8 characters, include numbers and special characters for better security</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-1"></i> Create User
+                            </button>
+                            <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Bulk Import Users</h6>
+                </div>
+                <div class="card-body">
+                    <p>You can import multiple users at once using a CSV file with the following columns:</p>
+                    <ul>
+                        <li><code>first_name</code> - User's first name</li>
+                        <li><code>last_name</code> - User's last name</li>
+                        <li><code>email</code> - User's email address (required)</li>
+                        <li><code>username</code> - Login username (required)</li>
+                        <li><code>password</code> - Initial password (required)</li>
+                        <li><code>role</code> - User role (admin, manager, sales, support)</li>
+                        <li><code>department</code> - Department name</li>
+                        <li><code>phone</code> - Contact phone number</li>
+                        <li><code>status</code> - Account status (active, inactive)</li>
+                    </ul>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'admin_download_user_template' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-1"></i> Download Template
+                        </a>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importUsersModal">
+                            <i class="fas fa-file-import me-1"></i> Import Users
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Users Modal -->
+<div class="modal fade" id="importUsersModal" tabindex="-1" aria-labelledby="importUsersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importUsersModalLabel">Import Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="#" method="post" enctype="multipart/form-data" id="importUsersForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Select CSV File</label>
+                        <input class="form-control" type="file" id="csvFile" name="csv_file" accept=".csv" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="skipHeader" name="skip_header" checked>
+                        <label class="form-check-label" for="skipHeader">
+                            Skip header row
+                        </label>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-1"></i> Make sure your CSV file follows the template format.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-import me-1"></i> Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password visibility toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // Toggle the eye icon
+            toggleIcon.classList.toggle('fa-eye');
+            toggleIcon.classList.toggle('fa-eye-slash');
+        });
+        
+        // User creation form submission
+        const userForm = document.querySelector('form[action*="admin_user_create"]');
+        if (userForm) {
+            userForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                // Convert formData to JSON object
+                const userData = {};
+                formData.forEach((value, key) => {
+                    userData[key] = value;
+                });
+                
+                // Make authenticated API call to create user
+                apiAuth.fetchAPI('/api/users/', 'POST', userData)
+                    .then(data => {
+                        // Show success message
+                        alert('User created successfully!');
+                        // Redirect to users list
+                        window.location.href = '{% url "admin_users" %}';
+                    })
+                    .catch(error => {
+                        try {
+                            const errorData = JSON.parse(error.message);
+                            let errorMessage = 'Error creating user: ';
+                            
+                            // Format error messages from the API response
+                            Object.keys(errorData).forEach(key => {
+                                errorMessage += `${key}: ${errorData[key]}\n`;
+                            });
+                            
+                            alert(errorMessage);
+                        } catch (e) {
+                            alert('Error creating user: ' + error.message);
+                        }
+                    });
+            });
+        }
+        
+        // Import users form submission
+        const importUsersForm = document.getElementById('importUsersForm');
+        importUsersForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Make API call to import users
+            fetch('/api/users/import/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(JSON.stringify(data));
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Users imported successfully!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('importUsersModal'));
+                modal.hide();
+                // Reload the page to see the new users
+                window.location.reload();
+            })
+            .catch(error => {
+                try {
+                    const errorData = JSON.parse(error.message);
+                    let errorMessage = 'Error importing users: ';
+                    
+                    // Format error messages from the API response
+                    Object.keys(errorData).forEach(key => {
+                        errorMessage += `${key}: ${errorData[key]}\n`;
+                    });
+                    
+                    alert(errorMessage);
+                } catch (e) {
+                    alert('Error importing users: ' + error.message);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,1089 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Lead Details - LiveFxHub CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Notification styling */
+    .notification-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 350px;
+    }
+    
+    .notification {
+        padding: 15px 20px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        color: white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideIn 0.5s ease;
+    }
+    
+    .notification-success {
+        background-color: #28a745;
+    }
+    
+    .notification-error {
+        background-color: #dc3545;
+    }
+    
+    .notification-info {
+        background-color: #17a2b8;
+    }
+    
+    .notification-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .close-notification {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Lead Details</h1>
+        <a href="{% url 'leads-page' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Leads
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Lead Information</h6>
+                </div>
+                <div class="card-body" id="lead-info-card">
+                    <div class="text-center mb-4">
+                        {% include 'crm_app/partials/loader.html' %}
+                        <p class="mt-2">Loading lead information...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Additional Information</h6>
+                    <div id="lead-action-buttons">
+                        <!-- Buttons will be populated dynamically based on lead status -->
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="lead-details-tabs">
+                        <ul class="nav nav-tabs" id="leadTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="true">Notes</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab" aria-controls="tasks" aria-selected="false">Tasks</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">Documents</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content p-3 border border-top-0 rounded-bottom" id="leadTabsContent">
+                            <div class="tab-pane fade show active" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+                                <div id="notes-container">
+                                    <p class="text-center text-muted">No notes available for this lead.</p>
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-primary" id="add-note-btn">
+                                        <i class="fas fa-plus me-1"></i> Add Note
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tasks" role="tabpanel" aria-labelledby="tasks-tab">
+                                <div id="tasks-container">
+                                    <p class="text-center text-muted">No tasks available for this lead.</p>
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-primary" id="add-task-btn">
+                                        <i class="fas fa-plus me-1"></i> Add Task
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                                <div id="documents-container">
+                                    <p class="text-center text-muted">No documents available for this lead.</p>
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-primary" id="add-document-btn">
+                                        <i class="fas fa-plus me-1"></i> Add Document
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Convert Lead Modal -->
+<div class="modal fade" id="convertLeadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Convert Lead</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Converting this lead will create an account and a contact based on the lead information.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> The account and contact will be created automatically with the lead's information.
+                </div>
+                
+                <form id="convert-lead-form">
+                    <h6 class="mb-3">Optional: Create Deal</h6>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="create-deal-checkbox">
+                        <label class="form-check-label" for="create-deal-checkbox">
+                            Create a new deal for this lead
+                        </label>
+                    </div>
+                    
+                    <div id="deal-fields" class="d-none">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="deal-name" class="form-label">Deal Name</label>
+                                <input type="text" class="form-control" id="deal-name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="deal-amount" class="form-label">Amount</label>
+                                <input type="number" class="form-control" id="deal-amount" min="0" step="0.01">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="deal-closing-date" class="form-label">Closing Date</label>
+                                <input type="date" class="form-control" id="deal-closing-date">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="deal-stage" class="form-label">Stage</label>
+                                <select class="form-select" id="deal-stage">
+                                    <option value="qualification">Qualification</option>
+                                    <option value="needs_analysis">Needs Analysis</option>
+                                    <option value="value_proposition">Value Proposition</option>
+                                    <option value="decision_makers">Decision Makers</option>
+                                    <option value="proposal">Proposal</option>
+                                    <option value="negotiation">Negotiation</option>
+                                    <option value="closed_won">Closed Won</option>
+                                    <option value="closed_lost">Closed Lost</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="deal-description" class="form-label">Description</label>
+                            <textarea class="form-control" id="deal-description" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirm-convert-btn">Convert Lead</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="note-form">
+                    <div class="mb-3">
+                        <label for="note-subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="note-subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="note-content" class="form-label">Content</label>
+                        <textarea class="form-control" id="note-content" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-note-btn">Save Note</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <div class="mb-3">
+                        <label for="task-subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="task-subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-due-date" class="form-label">Due Date</label>
+                        <input type="datetime-local" class="form-control" id="task-due-date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-priority" class="form-label">Priority</label>
+                        <select class="form-select" id="task-priority">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-assigned-to" class="form-label">Assigned To</label>
+                        <select class="form-select" id="task-assigned-to" required>
+                            <option value="">Select User</option>
+                            <!-- User options will be loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="task-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-task-btn">Save Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Document Modal -->
+<div class="modal fade" id="addDocumentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="document-form">
+                    <div class="mb-3">
+                        <label for="document-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="document-title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document-file" class="form-label">File</label>
+                        <input type="file" class="form-control" id="document-file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="document-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-document-btn">Save Document</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notification-container" class="notification-container"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to show notifications
+    function showNotification(title, message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        // Create notification content
+        const content = document.createElement('div');
+        content.innerHTML = `<strong>${title}:</strong> ${message}`;
+        
+        // Create close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-notification';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', () => {
+            notification.style.animation = 'fadeOut 0.5s ease forwards';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        });
+        
+        // Add content and close button to notification
+        notification.appendChild(content);
+        notification.appendChild(closeBtn);
+        
+        // Add notification to container
+        const container = document.getElementById('notification-container');
+        container.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 500);
+            }
+        }, 5000);
+    }
+    // Store the lead ID from the server
+    const leadId = "{{ lead_id }}";
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load lead data
+        loadLeadDetails();
+        
+        // Initialize convert lead modal functionality
+        initConvertLeadModal();
+        
+        // Set up modal buttons
+        document.getElementById('add-note-btn').addEventListener('click', function() {
+            const noteModal = new bootstrap.Modal(document.getElementById('addNoteModal'));
+            noteModal.show();
+        });
+        
+        document.getElementById('add-task-btn').addEventListener('click', function() {
+            // Load users before showing the modal
+            loadUsers();
+            const taskModal = new bootstrap.Modal(document.getElementById('addTaskModal'));
+            taskModal.show();
+        });
+        
+        document.getElementById('add-document-btn').addEventListener('click', function() {
+            const documentModal = new bootstrap.Modal(document.getElementById('addDocumentModal'));
+            documentModal.show();
+        });
+        
+        document.getElementById('save-note-btn').addEventListener('click', saveNote);
+        document.getElementById('save-task-btn').addEventListener('click', saveTask);
+        document.getElementById('save-document-btn').addEventListener('click', saveDocument);
+        
+        // Initialize checkbox for creating a deal during conversion
+        const createDealCheckbox = document.getElementById('create-deal-checkbox');
+        const dealFields = document.getElementById('deal-fields');
+        
+        if (createDealCheckbox && dealFields) {
+            createDealCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    dealFields.classList.remove('d-none');
+                } else {
+                    dealFields.classList.add('d-none');
+                }
+            });
+        }
+        
+        // Set up convert lead form submission
+        const convertLeadForm = document.getElementById('convert-lead-form');
+        if (convertLeadForm) {
+            convertLeadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                convertLead();
+            });
+        }
+    });
+    
+    // Load lead details
+    async function loadLeadDetails() {
+        try {
+            const lead = await apiRequest(`leads/${leadId}/`);
+            if (lead) {
+                displayLeadInfo(lead);
+                loadRelatedItems();
+            } else {
+                showNotification('Error', 'Failed to load lead details', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading lead details:', error);
+            showNotification('Error', 'Failed to load lead details', 'error');
+        }
+    }
+    
+    // Display lead information
+    function displayLeadInfo(lead) {
+        const leadInfoCard = document.getElementById('lead-info-card');
+        const leadActionButtons = document.getElementById('lead-action-buttons');
+        
+        // Get assigned user name or display 'Unassigned'
+        let assignedTo = 'Unassigned';
+        if (lead.assigned_to) {
+            if (typeof lead.assigned_to === 'object') {
+                assignedTo = `${lead.assigned_to.first_name || ''} ${lead.assigned_to.last_name || ''}`.trim();
+            } else if (typeof lead.assigned_to === 'string' && lead.assigned_to_name) {
+                assignedTo = lead.assigned_to_name;
+            } else {
+                assignedTo = 'Assigned';
+            }
+        }
+        
+        // Get industry name if available
+        let industryName = 'Not specified';
+        if (lead.industry) {
+            if (typeof lead.industry === 'object') {
+                industryName = lead.industry.name || 'Not specified';
+            } else if (typeof lead.industry === 'number' && lead.industry_name) {
+                industryName = lead.industry_name;
+            } else {
+                industryName = 'Specified';
+            }
+        }
+        
+        // Format salutation and name
+        const fullName = `${lead.salutation ? lead.salutation + ' ' : ''}${lead.first_name} ${lead.last_name}`;
+        
+        // Create action buttons based on lead status
+        leadActionButtons.innerHTML = '';
+        
+        // Only show convert button if lead is not converted
+        if (lead.lead_status !== 'converted') {
+            const convertBtn = document.createElement('a');
+            convertBtn.href = 'javascript:void(0)';
+            convertBtn.id = 'convert-lead-btn';
+            convertBtn.className = 'btn btn-sm btn-success me-2';
+            convertBtn.innerHTML = '<i class="fas fa-exchange-alt me-1"></i> Convert Lead';
+            convertBtn.addEventListener('click', function() {
+                const convertModal = new bootstrap.Modal(document.getElementById('convertLeadModal'));
+                convertModal.show();
+            });
+            leadActionButtons.appendChild(convertBtn);
+            
+            // Edit button for non-converted leads
+            const editBtn = document.createElement('a');
+            editBtn.href = 'javascript:void(0)';
+            editBtn.id = 'edit-lead-btn';
+            editBtn.className = 'btn btn-sm btn-primary me-2';
+            editBtn.innerHTML = '<i class="fas fa-edit me-1"></i> Edit Lead';
+            editBtn.addEventListener('click', function() {
+                window.location.href = `/leads/${leadId}/edit/`;
+            });
+            leadActionButtons.appendChild(editBtn);
+        } else {
+            // Disabled buttons for converted leads
+            const convertedNote = document.createElement('span');
+            convertedNote.className = 'badge bg-secondary me-2 py-2';
+            convertedNote.innerHTML = '<i class="fas fa-info-circle me-1"></i> Lead converted';
+            leadActionButtons.appendChild(convertedNote);
+        }
+        
+        // Delete button always available
+        const deleteBtn = document.createElement('a');
+        deleteBtn.href = 'javascript:void(0)';
+        deleteBtn.id = 'delete-lead-btn';
+        deleteBtn.className = 'btn btn-sm btn-danger';
+        deleteBtn.innerHTML = '<i class="fas fa-trash me-1"></i> Delete Lead';
+        deleteBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
+                deleteLead(leadId);
+            }
+        });
+        leadActionButtons.appendChild(deleteBtn);
+        
+        leadInfoCard.innerHTML = `
+            <div class="text-center mb-4">
+                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(lead.first_name)}+${encodeURIComponent(lead.last_name)}&background=0D8ABC&color=fff&size=128" 
+                     alt="Lead Avatar" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px;">
+                <h4 class="mt-3">${fullName}</h4>
+                <span class="badge bg-${getLeadStatusColor(lead.lead_status)}">${lead.lead_status}</span>
+                ${lead.lead_status === 'converted' ? '<div class="mt-2"><small class="text-muted">This lead has been converted to an account and contact</small></div>' : ''}
+            </div>
+            
+            <!-- Basic Information Section -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-primary">Basic Information</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    ${lead.company ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Company</small>
+                        <span class="text-dark">${lead.company}</span>
+                    </div>` : ''}
+                    
+                    ${lead.title ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Job Title</small>
+                        <span class="text-dark">${lead.title}</span>
+                    </div>` : ''}
+                    
+                    ${lead.email ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Email</small>
+                        <span class="text-dark">${lead.email}</span>
+                    </div>` : ''}
+                    
+                    ${lead.phone ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Phone</small>
+                        <span class="text-dark">${lead.phone}</span>
+                    </div>` : ''}
+                    
+                    ${lead.mobile ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Mobile</small>
+                        <span class="text-dark">${lead.mobile}</span>
+                    </div>` : ''}
+                    
+                    ${lead.website ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Website</small>
+                        <span class="text-dark"><a href="${lead.website}" target="_blank" class="text-primary">${lead.website}</a></span>
+                    </div>` : ''}
+                    
+                    ${lead.address ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Address</small>
+                        <span class="text-dark">${lead.address}</span>
+                    </div>` : ''}
+                </div>
+            </div>
+            
+            <!-- Status & Classification Section -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-primary">Status & Classification</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Lead Status</small>
+                        <span class="badge bg-${getLeadStatusColor(lead.lead_status)}">${lead.lead_status}</span>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Lead Source</small>
+                        <span class="text-dark">${lead.lead_source}</span>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Industry</small>
+                        <span class="text-dark">${industryName}</span>
+                    </div>
+                    
+                    ${lead.annual_revenue ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Annual Revenue</small>
+                        <span class="text-dark">$${lead.annual_revenue.toLocaleString()}</span>
+                    </div>` : ''}
+                    
+                    ${lead.employees ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Number of Employees</small>
+                        <span class="text-dark">${lead.employees.toLocaleString()}</span>
+                    </div>` : ''}
+                </div>
+            </div>
+            
+            <!-- System Information Section -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-primary">System Information</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Assigned To</small>
+                        <span class="text-dark">${assignedTo}</span>
+                    </div>
+                    
+                    ${lead.manager_username ? `
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Manager</small>
+                        <span class="text-dark">${lead.manager_username}</span>
+                    </div>` : ''}
+                    
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Created</small>
+                        <span class="text-dark">${new Date(lead.created_at).toLocaleString()}</span>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <small class="text-muted d-block">Last Updated</small>
+                        <span class="text-dark">${new Date(lead.updated_at).toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+            
+            ${lead.description ? `
+            <div class="mt-4">
+                <h6 class="font-weight-bold">Description</h6>
+                <p class="text-dark">${lead.description}</p>
+            </div>` : ''}
+        `;
+    }
+    
+    // Load related items (notes, tasks, documents)
+    async function loadRelatedItems() {
+        // Load notes
+        const notes = await apiRequest(`leads/${leadId}/notes/`);
+        if (notes && notes.length > 0) {
+            displayNotes(notes);
+        }
+        
+        // Load tasks
+        const tasks = await apiRequest(`leads/${leadId}/tasks/`);
+        // Always display tasks container, even if empty
+        displayTasks(tasks || []);
+        
+        // Load documents
+        const documents = await apiRequest(`leads/${leadId}/documents/`);
+        if (documents && documents.length > 0) {
+            displayDocuments(documents);
+        }
+    }
+    
+    // Display notes
+    function displayNotes(notes) {
+        const notesContainer = document.getElementById('notes-container');
+        let notesHtml = '<div class="list-group">';
+        
+        notes.forEach(note => {
+            notesHtml += `
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1 text-dark">${note.subject}</h5>
+                        <small class="text-dark">${formatDate(note.created_at)}</small>
+                    </div>
+                    <p class="mb-1 text-dark">${note.content}</p>
+                </div>
+            `;
+        });
+        
+        notesHtml += '</div>';
+        notesContainer.innerHTML = notesHtml;
+    }
+    
+    // Display tasks
+    function displayTasks(tasks) {
+        const tasksContainer = document.getElementById('tasks-container');
+        
+        if (!tasks || tasks.length === 0) {
+            tasksContainer.innerHTML = '<p class="text-center text-muted">No tasks available for this lead.</p>';
+            return;
+        }
+        
+        // Sort tasks by created_at date, most recent first
+        const sortedTasks = [...tasks].sort((a, b) => {
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+        
+        let tasksHtml = '<div class="table-responsive"><table class="table table-hover"><thead><tr>' +
+            '<th class="text-dark">Subject</th>' +
+            '<th class="text-dark">Due Date</th>' +
+            '<th class="text-dark">Created</th>' +
+            '<th class="text-dark">Status</th>' +
+            '<th class="text-dark">Priority</th>' +
+            '<th class="text-dark">Assigned To</th>' +
+            '</tr></thead><tbody>';
+        
+        sortedTasks.forEach(task => {
+            const statusClass = getTaskStatusClass(task.status);
+            const priorityClass = getTaskPriorityClass(task.priority);
+            
+            // Format the assigned to name
+            let assignedTo = 'Unassigned';
+            if (task.assigned_to) {
+                if (typeof task.assigned_to === 'object') {
+                    assignedTo = `${task.assigned_to.first_name || ''} ${task.assigned_to.last_name || ''}`.trim() || task.assigned_to.username;
+                } else {
+                    assignedTo = 'Assigned';
+                }
+            }
+            
+            tasksHtml += `
+                <tr>
+                    <td class="text-dark">${task.subject}</td>
+                    <td class="text-dark">${formatDateTime(task.due_date)}</td>
+                    <td class="text-dark">${formatDateTime(task.created_at)}</td>
+                    <td><span class="badge ${statusClass}">${task.status}</span></td>
+                    <td><span class="badge ${priorityClass}">${task.priority}</span></td>
+                    <td class="text-dark">${assignedTo}</td>
+                </tr>
+            `;
+        });
+        
+        tasksHtml += '</tbody></table></div>';
+        tasksContainer.innerHTML = tasksHtml;
+    }
+    
+    // Display documents
+    function displayDocuments(documents) {
+        const documentsContainer = document.getElementById('documents-container');
+        let documentsHtml = '<div class="list-group">';
+        
+        documents.forEach(document => {
+            documentsHtml += `
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1 text-dark">${document.title}</h5>
+                        <small class="text-dark">${formatDate(document.created_at)}</small>
+                    </div>
+                    ${document.description ? `<p class="mb-1 text-dark">${document.description}</p>` : ''}
+                    <div class="mt-2">
+                        <a href="${document.file}" class="btn btn-sm btn-primary" target="_blank">
+                            <i class="fas fa-download me-1"></i> Download
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
+        
+        documentsHtml += '</div>';
+        documentsContainer.innerHTML = documentsHtml;
+    }
+    
+    // Save a new note
+    async function saveNote() {
+        const subject = document.getElementById('note-subject').value.trim();
+        const content = document.getElementById('note-content').value.trim();
+        
+        if (!subject || !content) {
+            showNotification('Error', 'Please fill in all required fields', 'error');
+            return;
+        }
+        
+        const noteData = {
+            subject: subject,
+            content: content,
+            related_lead: leadId
+        };
+        
+        try {
+            const response = await apiRequest('notes/', 'POST', noteData);
+            if (response) {
+                showNotification('Success', 'Note added successfully', 'success');
+                
+                // Close modal and refresh notes
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addNoteModal'));
+                modal.hide();
+                
+                // Reset form
+                document.getElementById('note-form').reset();
+                
+                // Reload related items
+                loadRelatedItems();
+            }
+        } catch (error) {
+            console.error('Error saving note:', error);
+            showNotification('Error', 'Failed to save note', 'error');
+        }
+    }
+    
+    // Load users for the assigned_to dropdown
+    async function loadUsers() {
+        try {
+            // Use the users-by-manager endpoint to get filtered users based on manager relationship
+            const response = await apiRequest('users-by-manager/', 'GET');
+            if (response) {
+                const assignedToSelect = document.getElementById('task-assigned-to');
+                // Clear existing options except the first one
+                while (assignedToSelect.options.length > 1) {
+                    assignedToSelect.remove(1);
+                }
+                
+                // Add user options
+                response.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.first_name && user.last_name ? 
+                        `${user.first_name} ${user.last_name}` : user.username;
+                    assignedToSelect.appendChild(option);
+                });
+                
+                // Set current user as default if available
+                const currentUserId = document.querySelector('meta[name="user-id"]')?.content;
+                if (currentUserId) {
+                    for (let i = 0; i < assignedToSelect.options.length; i++) {
+                        if (assignedToSelect.options[i].value === currentUserId) {
+                            assignedToSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            showNotification('Error', 'Failed to load users. Please try again.', 'error');
+        }
+    }
+
+    // Save a new task
+    async function saveTask() {
+        const subject = document.getElementById('task-subject').value.trim();
+        const dueDate = document.getElementById('task-due-date').value;
+        const priority = document.getElementById('task-priority').value;
+        const assignedTo = document.getElementById('task-assigned-to').value;
+        const description = document.getElementById('task-description').value.trim();
+        
+        if (!subject || !dueDate || !assignedTo) {
+            showNotification('Error', 'Please fill in all required fields', 'error');
+            return;
+        }
+        
+        const taskData = {
+            subject: subject,
+            due_date: dueDate,
+            priority: priority,
+            description: description,
+            status: 'not_started',
+            related_lead: leadId,
+            assigned_to: assignedTo
+        };
+        
+        try {
+            const response = await apiRequest('tasks/', 'POST', taskData);
+            if (response) {
+                showNotification('Success', 'Task added successfully', 'success');
+                
+                // Close modal and refresh tasks
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addTaskModal'));
+                modal.hide();
+                
+                // Reset form
+                document.getElementById('task-form').reset();
+                
+                // Reload related items
+                loadRelatedItems();
+            }
+        } catch (error) {
+            console.error('Error saving task:', error);
+            if (error.response && error.response.data) {
+                // Display specific error messages from the server
+                const errorMessages = [];
+                for (const field in error.response.data) {
+                    errorMessages.push(`${field}: ${error.response.data[field]}`);
+                }
+                showNotification('Error', errorMessages.join('\n'), 'error');
+            } else {
+                showNotification('Error', 'Failed to save task', 'error');
+            }
+        }
+    }
+    
+    // Save a new document
+    async function saveDocument() {
+        const title = document.getElementById('document-title').value.trim();
+        const file = document.getElementById('document-file').files[0];
+        const description = document.getElementById('document-description').value.trim();
+        
+        if (!title || !file) {
+            showNotification('Error', 'Please fill in all required fields', 'error');
+            return;
+        }
+        
+        // Create form data for file upload
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('file', file);
+        if (description) {
+            formData.append('description', description);
+        }
+        formData.append('related_lead', leadId);
+        
+        try {
+            // Custom API request for file upload
+            const token = localStorage.getItem('access_token');
+            const response = await fetch('/api/documents/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+            
+            if (response.ok) {
+                showNotification('Success', 'Document added successfully', 'success');
+                
+                // Close modal and refresh documents
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addDocumentModal'));
+                modal.hide();
+                
+                // Reset form
+                document.getElementById('document-form').reset();
+                
+                // Reload related items
+                loadRelatedItems();
+            } else {
+                throw new Error('Failed to upload document');
+            }
+        } catch (error) {
+            console.error('Error saving document:', error);
+            showNotification('Error', 'Failed to save document', 'error');
+        }
+    }
+    
+    // Delete lead
+    async function deleteLead(id) {
+        try {
+            const response = await apiRequest(`leads/${id}/`, 'DELETE');
+            showNotification('Success', 'Lead deleted successfully', 'success');
+            
+            // Redirect to leads page after deletion
+            setTimeout(() => {
+                window.location.href = '/leads/';
+            }, 1500);
+        } catch (error) {
+            console.error('Error deleting lead:', error);
+            showNotification('Error', 'Failed to delete lead', 'error');
+        }
+    }
+    
+    // Helper function for lead status color
+    function getLeadStatusColor(status) {
+        switch (status) {
+            case 'new': return 'primary';
+            case 'contacted': return 'info';
+            case 'qualified': return 'success';
+            case 'unqualified': return 'danger';
+            case 'converted': return 'warning';
+            default: return 'secondary';
+        }
+    }
+    
+    // Helper function for task status class
+    function getTaskStatusClass(status) {
+        switch (status) {
+            case 'not_started': return 'bg-secondary';
+            case 'in_progress': return 'bg-primary';
+            case 'completed': return 'bg-success';
+            case 'deferred': return 'bg-warning';
+            case 'waiting': return 'bg-info';
+            default: return 'bg-secondary';
+        }
+    }
+    
+    // Helper function for task priority class
+    function getTaskPriorityClass(priority) {
+        switch (priority) {
+            case 'high': return 'danger';
+            case 'medium': return 'warning';
+            case 'low': return 'success';
+            default: return 'secondary';
+        }
+    }
+    
+    // Initialize convert lead modal
+    function initConvertLeadModal() {
+        // Set today's date as default for deal closing date
+        const today = new Date();
+        const formattedDate = today.toISOString().substr(0, 10);
+        const closingDateInput = document.getElementById('deal-closing-date');
+        if (closingDateInput) {
+            closingDateInput.value = formattedDate;
+        }
+        
+        // Get convert lead button from modal footer
+        const confirmConvertBtn = document.getElementById('confirm-convert-btn');
+        if (confirmConvertBtn) {
+            confirmConvertBtn.addEventListener('click', convertLead);
+        }
+    }
+    
+    // Convert lead function
+    async function convertLead() {
+        try {
+            // Prepare data for conversion
+            const createDeal = document.getElementById('create-deal-checkbox').checked;
+            let data = {};
+            
+            // Add deal data if checkbox is checked
+            if (createDeal) {
+                data.create_deal = true;
+                data.deal = {
+                    name: document.getElementById('deal-name').value,
+                    amount: document.getElementById('deal-amount').value,
+                    closing_date: document.getElementById('deal-closing-date').value,
+                    stage: document.getElementById('deal-stage').value
+                };
+            }
+            
+            // Call the API to convert the lead
+            const response = await fetch(`/api/leads/${leadId}/convert/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showNotification('Success', 'Lead successfully converted!', 'success');
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('convertLeadModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Reload lead details to reflect conversion
+                loadLeadDetails();
+            } else {
+                const errorData = await response.json();
+                showNotification('Error', errorData.error || 'Failed to convert lead', 'error');
+            }
+        } catch (error) {
+            console.error('Error converting lead:', error);
+            showNotification('Error', 'An unexpected error occurred while converting the lead', 'error');
+        }
+    }
+    
+    // Helper function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

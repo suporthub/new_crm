@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveFxHub CRM</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% load static %}
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; /* Light grey background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .crm-title {
+            font-size: 3rem; /* Responsive font size */
+            font-weight: bold;
+            color: #2c3e50; /* Darker, more professional blue */
+            margin-bottom: 50px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            animation: fadeInDown 1s ease-out;
+            text-align: center;
+        }
+
+        .login-container {
+            display: flex;
+            gap: 30px; /* Space between cards */
+            justify-content: center;
+            align-items: stretch; /* Makes cards same height */
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
+            width: 100%;
+            max-width: 800px; /* Max width for the container */
+            animation: fadeInUp 1s ease-out 0.5s both; /* Staggered animation */
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            padding: 35px 40px;
+            text-align: center;
+            width: 100%; /* Full width on small screens */
+            max-width: 320px; /* Max width per card */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+        }
+
+        .login-card:hover {
+            transform: translateY(-12px) scale(1.03);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+        }
+
+        .login-card .icon {
+            font-size: 3.5rem; /* Icon size */
+            margin-bottom: 25px;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        
+        .login-card:hover .icon {
+            transform: scale(1.1);
+        }
+
+        .login-card.employee .icon {
+            color: #007bff; /* Bootstrap primary blue */
+        }
+
+        .login-card.admin .icon {
+            color: #6610f2; /* Bootstrap indigo */
+        }
+
+        .login-card h2 {
+            font-size: 1.75rem; /* Heading size */
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #343a40; /* Dark grey for text */
+        }
+
+        .login-card p {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.5;
+            min-height: 4.5em; /* Reserve space for 3 lines of text */
+        }
+
+        /* Keyframe animations for subtle entrance */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767px) { /* Target mobile devices */
+            .crm-title {
+                font-size: 2.2rem;
+                margin-bottom: 30px;
+            }
+            .login-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            .login-card {
+                width: 90%; /* Cards take more width on mobile */
+                max-width: 350px;
+                padding: 25px 30px;
+            }
+            .login-card .icon {
+                font-size: 3rem;
+            }
+            .login-card h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 991px) { /* Target tablets */
+             .login-card {
+                max-width: 280px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1 class="crm-title">LiveFxHub CRM</h1>
+
+    <div class="login-container">
+        <a href="{% url 'login-page' %}" class="login-card employee">
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h2>Employee Login</h2>
+            <p>Access your workspace, manage leads, and track progress.</p>
+        </a>
+
+        <a href="{% url 'admin_login' %}" class="login-card admin">
+            <div class="icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h2>Admin Login</h2>
+            <p>Manage system settings, users, and overall CRM configuration.</p>
+        </a>
+    </div>
+
+    <!-- Bootstrap JS Bundle (Popper included) -->
+        <div class="container">
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2025 LiveFxHub CRM. All rights reserved.</p>
+            </div>
+        </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                // Update login button to go to dashboard
+                const loginBtn = document.getElementById('login-btn');
+                loginBtn.textContent = 'Dashboard';
+                loginBtn.href = "{% url 'dashboard-page' %}";
+            }
+        });
+    </script>
+</body>
+</html>

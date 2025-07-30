@@ -1,0 +1,805 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}User Management - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">User Overview</h5>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fas fa-plus me-2"></i> Add New User
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#importUsersModal">
+                        <i class="fas fa-file-import me-2"></i> Import Users
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="text-primary mb-2">Total Users</h6>
+                                <h3>{{ total_users }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="text-success mb-2">Active Users</h6>
+                                <h3>{{ active_users }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h6 class="text-danger mb-2">Inactive Users</h6>
+                                <h3>{{ inactive_users }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6 class="text-info mb-2">New This Month</h6>
+                                <h3>{{ new_users }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="userSearchInput" placeholder="Search users...">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="roleFilter">
+                            <option value="">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="sales">Sales</option>
+                            <option value="support">Support</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" id="filterBtn">
+                            <i class="fas fa-filter me-2"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover admin-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllUsers">
+                                    </div>
+                                </th>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Department</th>
+                                <th>Manager</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input user-checkbox" type="checkbox" value="{{ user.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% static 'img/default-avatar.png' %}" alt="{{ user.name }}" class="rounded-circle me-2" width="40" height="40">
+                                        <div>
+                                            <div class="fw-semibold">{{ user.name }}</div>
+                                            <div class="small text-muted">@{{ user.username }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td><span class="badge bg-{{ user.role_color }}">{{ user.role }}</span></td>
+                                <td>
+                                    {% if user.department %}
+                                        {% with dept_lower=user.department|lower %}
+                                            {% if dept_lower == 'it' %}
+                                                <span class="badge bg-info">{{ user.department }}</span>
+                                            {% elif dept_lower == 'sales' %}
+                                                <span class="badge bg-success">{{ user.department }}</span>
+                                            {% elif dept_lower == 'marketing' %}
+                                                <span class="badge bg-warning">{{ user.department }}</span>
+                                            {% elif dept_lower == 'hr' %}
+                                                <span class="badge bg-secondary">{{ user.department }}</span>
+                                            {% elif dept_lower == 'finance' %}
+                                                <span class="badge bg-dark">{{ user.department }}</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">{{ user.department }}</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.manager_username %}
+                                        <span>{{ user.manager_username }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.last_login }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="userActionDropdown{{ user.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="userActionDropdown{{ user.id }}">
+                                            <li><a class="dropdown-item" href="{% url 'admin_user_detail' user.id %}"><i class="fas fa-eye me-2"></i> View</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'admin_user_edit' user.id %}"><i class="fas fa-edit me-2"></i> Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            {% if user.is_active %}
+                                            <li><a class="dropdown-item text-warning" href="#" onclick="deactivateUser('{{ user.id }}')"><i class="fas fa-user-slash me-2"></i> Deactivate</a></li>
+                                            {% else %}
+                                            <li><a class="dropdown-item text-success" href="#" onclick="activateUser('{{ user.id }}')"><i class="fas fa-user-check me-2"></i> Activate</a></li>
+                                            {% endif %}
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteUser('{{ user.id }}')"><i class="fas fa-trash-alt me-2"></i> Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Bulk Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('activate')"><i class="fas fa-user-check me-2"></i> Activate Selected</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('deactivate')"><i class="fas fa-user-slash me-2"></i> Deactivate Selected</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('delete')"><i class="fas fa-trash-alt me-2"></i> Delete Selected</a></li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-outline-primary ms-2" id="exportUsersBtn">
+                        <i class="fas fa-file-export me-2"></i> Export Users
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">User Roles Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="userRolesChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">User Registration Trend</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="userRegistrationChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="firstName" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" id="generatePassword">
+                                    Generate
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Select Role</option>
+                                {% if current_user_role == 'admin' or current_user_role == 'superuser' %}
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                {% endif %}
+                                <option value="sales">Sales Representative</option>
+                                <option value="support">Support Representative</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <select class="form-select" id="department" name="department">
+                                <option value="">Select Department</option>
+                                <option value="management">Management</option>
+                                <option value="sales">Sales</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="support">Support</option>
+                                <option value="it">IT</option>
+                                <option value="finance">Finance</option>
+                                <option value="hr">HR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% if request.user.profile.role == 'manager' %}
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="manager_username" class="form-label">Manager</label>
+                            <input type="text" class="form-control" id="manager_username" name="manager_username" value="{{ request.user.username }}" readonly>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveUserBtn">Save User</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Users Modal -->
+<div class="modal fade" id="importUsersModal" tabindex="-1" aria-labelledby="importUsersModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importUsersModalLabel">Import Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importUsersForm">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="importFile" name="import_file" accept=".csv" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="headerRow" name="header_row" checked>
+                        <label class="form-check-label" for="headerRow">
+                            First row contains headers
+                        </label>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">CSV Format</h6>
+                        <p class="mb-0">Your CSV file should have the following columns:</p>
+                        <ul class="mb-0">
+                            <li>first_name</li>
+                            <li>last_name</li>
+                            <li>email</li>
+                            <li>username</li>
+                            <li>password</li>
+                            <li>role</li>
+                            <li>department (optional)</li>
+                            <li>phone (optional)</li>
+                            <li>status (optional)</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <a href="{% url 'admin_download_user_template' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-2"></i> Download Template
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importUsersBtn">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable - single initialization to prevent warnings
+        const usersTable = $('#usersTable').DataTable({
+            responsive: true,
+            dom: '<"top"lf>rt<"bottom"ip><"clear">',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search users..."
+            },
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            columnDefs: [
+                { orderable: false, targets: [0, 7] } // Disable sorting on checkbox and actions columns
+            ]
+        });
+        
+        // User Roles Chart
+        const userRolesCtx = document.getElementById('userRolesChart').getContext('2d');
+        const roleCounts = JSON.parse('{{ role_counts|escapejs }}');
+        
+        const userRolesChart = new Chart(userRolesCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(roleCounts),
+                datasets: [{
+                    data: Object.values(roleCounts),
+                    backgroundColor: [
+                        'rgba(231, 76, 60, 0.8)', // Admin (red)
+                        'rgba(52, 152, 219, 0.8)', // Manager (blue)
+                        'rgba(46, 204, 113, 0.8)', // Sales (green)
+                        'rgba(155, 89, 182, 0.8)', // Support (purple)
+                        'rgba(189, 195, 199, 0.8)' // Other (gray)
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round(value / total * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // User Registration Chart
+        const userRegistrationCtx = document.getElementById('userRegistrationChart').getContext('2d');
+        const monthlyRegistrations = JSON.parse('{{ monthly_registrations|escapejs }}');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        const userRegistrationChart = new Chart(userRegistrationCtx, {
+            type: 'line',
+            data: {
+                labels: monthNames,
+                datasets: [{
+                    label: 'New Users',
+                    data: monthlyRegistrations,
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false,
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Select All Users Checkbox
+        document.getElementById('selectAllUsers').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
+        
+        // Filter Button
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            const searchValue = document.getElementById('userSearchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+            
+            // Clear previous search
+            usersTable.search('');
+            
+            // Custom filtering function for DataTables
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                // data[3] is the role column, data[5] is the status column
+                const rowRole = data[3].toLowerCase();
+                const rowStatus = data[5].toLowerCase();
+                
+                // Check if row matches all filters
+                const matchesRole = roleFilter === '' || rowRole.includes(roleFilter);
+                const matchesStatus = statusFilter === '' || 
+                                    (statusFilter === 'active' && rowStatus.includes('active')) ||
+                                    (statusFilter === 'inactive' && rowStatus.includes('inactive'));
+                
+                return matchesRole && matchesStatus;
+            });
+            
+            // Apply search term separately
+            if (searchValue) {
+                usersTable.search(searchValue);
+            }
+            
+            // Redraw the table with filters applied
+            usersTable.draw();
+            
+            // Remove the custom filter after drawing
+            $.fn.dataTable.ext.search.pop();
+            
+            showNotification('Success', 'Filters applied', 'success');
+        });
+        
+        // Toggle Password Visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+        
+        // Generate Random Password
+        document.getElementById('generatePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            
+            // Generate a random password (12 characters)
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            passwordInput.type = 'text'; // Show the generated password
+            passwordInput.value = password;
+            confirmPasswordInput.value = password;
+            
+            // Update eye toggle button
+            const icon = document.querySelector('#togglePassword i');
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+            
+            setTimeout(() => {
+                passwordInput.type = 'password'; // Hide after 3 seconds
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }, 3000);
+        });
+        
+        // Save User Button
+        document.getElementById('saveUserBtn').addEventListener('click', function() {
+            const form = document.getElementById('addUserForm');
+            
+            // Basic form validation
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Check if passwords match
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showNotification('Error', 'Passwords do not match', 'danger');
+                return;
+            }
+            
+            // Get form data and prepare to send to the API
+            const formData = new FormData(form);
+            const userData = {};
+            formData.forEach((value, key) => {
+                userData[key] = value;
+            });
+            
+            // Add manager_username field if it exists in the form
+            const managerUsernameField = document.getElementById('manager_username');
+            if (managerUsernameField) {
+                userData['manager_username'] = managerUsernameField.value;
+            }
+            
+            // Make authenticated API call to create user
+            apiAuth.fetchAPI('/api/users/', 'POST', userData)
+                .then(data => {
+                    // Show success message
+                    showNotification('Success', 'User created successfully!', 'success');
+                    
+                    // Close the modal and reset form
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+                    modal.hide();
+                    form.reset();
+                    
+                    // Reload the page to show the new user
+                    window.location.reload();
+                })
+                .catch(error => {
+                    try {
+                        const errorData = JSON.parse(error.message);
+                        let errorMessage = '';
+                        
+                        // Format error messages from the API response
+                        Object.keys(errorData).forEach(key => {
+                            errorMessage += `${key}: ${errorData[key]}\n`;
+                        });
+                        
+                        showNotification('Error', errorMessage, 'danger');
+                    } catch (e) {
+                        showNotification('Error', 'Failed to create user: ' + error.message, 'danger');
+                    }
+                });
+        });
+        
+        // Import Users Button
+        document.getElementById('importUsersBtn').addEventListener('click', function() {
+            const form = document.getElementById('importUsersForm');
+            
+            // Basic form validation
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // In a real implementation, you would submit the form to the server
+            // Here we just simulate a successful submission
+            showNotification('Success', 'Users imported successfully!', 'success');
+            
+            // Close the modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('importUsersModal'));
+            modal.hide();
+            form.reset();
+        });
+        
+        // Export Users Button
+        document.getElementById('exportUsersBtn').addEventListener('click', function() {
+            // In a real implementation, you would trigger a server-side export
+            // Here we just simulate a download
+            showNotification('Success', 'Users exported successfully!', 'success');
+        });
+    });
+    
+    // User Actions
+    function activateUser(userId) {
+        if (confirm('Are you sure you want to activate this user?')) {
+            // Make authenticated API call to activate user
+            apiAuth.fetchAPI(`/api/users/${userId}/activate/`, 'POST')
+                .then(data => {
+                    showNotification('Success', `User ID ${userId} activated successfully!`, 'success');
+                    // Reload the page to show updated data
+                    window.location.reload();
+                })
+                .catch(error => {
+                    showNotification('Error', error.message, 'danger');
+                });
+        }
+    }
+    
+    function deactivateUser(userId) {
+        if (confirm('Are you sure you want to deactivate this user?')) {
+            // Make authenticated API call to deactivate user
+            apiAuth.fetchAPI(`/api/users/${userId}/deactivate/`, 'POST')
+                .then(data => {
+                    showNotification('Success', `User ID ${userId} deactivated successfully!`, 'warning');
+                    // Reload the page to show updated data
+                    window.location.reload();
+                })
+                .catch(error => {
+                    showNotification('Error', error.message, 'danger');
+                });
+        }
+    }
+    
+    function deleteUser(userId) {
+        if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            // Make authenticated API call to delete user
+            apiAuth.fetchAPI(`/api/users/${userId}/`, 'DELETE')
+                .then(data => {
+                    showNotification('Success', `User ID ${userId} deleted successfully!`, 'danger');
+                    // Reload the page to show updated data
+                    window.location.reload();
+                })
+                .catch(error => {
+                    showNotification('Error', error.message, 'danger');
+                });
+        }
+    }
+    
+    // Bulk Actions
+    function bulkAction(action) {
+        // Get all checked user IDs
+        const checkedUsers = [];
+        document.querySelectorAll('.user-checkbox:checked').forEach(checkbox => {
+            checkedUsers.push(checkbox.value);
+        });
+        
+        if (checkedUsers.length === 0) {
+            showNotification('Warning', 'No users selected', 'warning');
+            return;
+        }
+        
+        let confirmMessage = '';
+        let successMessage = '';
+        
+        switch (action) {
+            case 'activate':
+                confirmMessage = 'Are you sure you want to activate the selected users?';
+                successMessage = `${checkedUsers.length} users activated successfully!`;
+                break;
+            case 'deactivate':
+                confirmMessage = 'Are you sure you want to deactivate the selected users?';
+                successMessage = `${checkedUsers.length} users deactivated successfully!`;
+                break;
+            case 'delete':
+                confirmMessage = 'Are you sure you want to delete the selected users? This action cannot be undone.';
+                successMessage = `${checkedUsers.length} users deleted successfully!`;
+                break;
+        }
+        
+        if (confirm(confirmMessage)) {
+            // In a real implementation, you would send an API request for the bulk action
+            // Here we just simulate a successful action
+            showNotification('Success', successMessage, action === 'delete' ? 'danger' : 'success');
+        }
+    }
+    
+    // Notification function (same as in dashboard.html)
+    function showNotification(title, message, type = 'success') {
+        // Check if Bootstrap's Toast functionality is available
+        if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Create toast element
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+            
+            // Set toast content
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}</strong>: ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            // Add to container
+            toastContainer.appendChild(toastEl);
+            
+            // Initialize and show toast
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: 5000
+            });
+            toast.show();
+            
+            // Remove from DOM after hiding
+            toastEl.addEventListener('hidden.bs.toast', function() {
+                toastEl.remove();
+            });
+        } else {
+            // Fallback to alert if Bootstrap Toast isn't available
+            console.log(`${title}: ${message}`);
+        }
+    }
+</script>
+{% endblock %}

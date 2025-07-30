@@ -1,0 +1,641 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Deals Management - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}Deals Management{% endblock %}
+
+{% block content %}
+<!-- Hidden data for charts -->
+<div id="chartData" 
+    data-labels="{{ stage_labels|safe }}"
+    data-counts="{{ stage_counts_json|safe }}"
+    data-values="{{ stage_values_json|safe }}"
+></div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Deal Overview</h5>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDealModal">
+                        <i class="fas fa-plus me-2"></i> Add New Deal
+                    </button>
+                    <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#importDealsModal">
+                        <i class="fas fa-file-import me-2"></i> Import Deals
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Total Deals</h6>
+                                <h2 class="mb-0">{{ total_deals }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Won Deals</h6>
+                                <h2 class="mb-0">{{ won_deals }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Pipeline Value</h6>
+                                <h2 class="mb-0">${{ pipeline_value|floatformat:2 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Win Rate</h6>
+                                <h2 class="mb-0">{{ win_rate }}%</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="dealSearchInput" placeholder="Search deals...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="stageFilter">
+                            <option value="">Stage (All)</option>
+                            {% for stage_id, stage_name in deal_stages %}
+                            <option value="{{ stage_id }}">{{ stage_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="accountFilter">
+                            <option value="">Account (All)</option>
+                            {% for account in accounts %}
+                            <option value="{{ account.id }}">{{ account.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" id="filterBtn">
+                            <i class="fas fa-filter me-2"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover admin-table" id="dealsTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllDeals">
+                                    </div>
+                                </th>
+                                <th>Deal Name</th>
+                                <th>Account</th>
+                                <th>Stage</th>
+                                <th>Amount</th>
+                                <th>Created</th>
+                                <th>Closing Date</th>
+                                <th>Owner</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for deal in deals %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input deal-checkbox" type="checkbox" value="{{ deal.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="deal-icon rounded-circle me-2 d-flex align-items-center justify-content-center bg-light" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-handshake text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ deal.name }}</div>
+                                            <div class="small text-muted">${{ deal.amount|floatformat:2 }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if deal.account %}
+                                    <a href="{% url 'admin_account_detail' deal.account.id %}">{{ deal.account.name }}</a>
+                                    {% else %}
+                                    <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {% if deal.stage == 'closed_won' %}bg-success{% elif deal.stage == 'closed_lost' %}bg-danger{% elif deal.stage == 'negotiation' or deal.stage == 'proposal' %}bg-warning{% else %}bg-info{% endif %}">
+                                        {% for stage_id, stage_name in deal_stages %}
+                                            {% if stage_id == deal.stage %}{{ stage_name }}{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </td>
+                                <td>${{ deal.amount|floatformat:2 }}</td>
+                                <td>{{ deal.created_at|date:"M d, Y" }}</td>
+                                <td>{{ deal.expected_close_date|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if deal.assigned_to %}
+                                    {{ deal.assigned_to.first_name }} {{ deal.assigned_to.last_name }}
+                                    {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dealActionDropdown{{ deal.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dealActionDropdown{{ deal.id }}">
+                                            <li><a class="dropdown-item" href="{% url 'admin_deal_detail' deal.id %}"><i class="fas fa-eye me-2"></i> View</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'admin_deal_edit' deal.id %}"><i class="fas fa-edit me-2"></i> Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-success" href="#" onclick="markAsWon('{{ deal.id }}')"><i class="fas fa-check-circle me-2"></i> Mark as Won</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="markAsLost('{{ deal.id }}')"><i class="fas fa-times-circle me-2"></i> Mark as Lost</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteDeal('{{ deal.id }}')"><i class="fas fa-trash-alt me-2"></i> Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Bulk Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('change-stage')"><i class="fas fa-exchange-alt me-2"></i> Change Stage</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('assign-owner')"><i class="fas fa-user-check me-2"></i> Assign Owner</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-success" href="#" onclick="bulkAction('mark-won')"><i class="fas fa-check-circle me-2"></i> Mark as Won</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('mark-lost')"><i class="fas fa-times-circle me-2"></i> Mark as Lost</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('delete')"><i class="fas fa-trash-alt me-2"></i> Delete Selected</a></li>
+                        </ul>
+                    </div>
+                    
+                    <a href="#" class="btn btn-outline-primary ms-2" id="exportDealsBtn">
+                        <i class="fas fa-file-export me-2"></i> Export
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">Deal Pipeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="dealPipelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Sales Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="salesPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Deal Modal -->
+<div class="modal fade" id="addDealModal" tabindex="-1" aria-labelledby="addDealModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addDealModalLabel">Add New Deal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDealForm" method="post" action="{% url 'admin_deal_create' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="name" class="form-label">Deal Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="account" class="form-label">Account <span class="text-danger">*</span></label>
+                            <select class="form-select" id="account" name="account" required>
+                                <option value="">-- Select Account --</option>
+                                {% for account in accounts %}
+                                <option value="{{ account.id }}">{{ account.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="amount" name="amount" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="stage" class="form-label">Stage <span class="text-danger">*</span></label>
+                            <select class="form-select" id="stage" name="stage" required>
+                                {% for stage_id, stage_name in deal_stages %}
+                                <option value="{{ stage_id }}">{{ stage_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expected_close_date" class="form-label">Expected Close Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="expected_close_date" name="expected_close_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="probability" class="form-label">Probability (%)</label>
+                            <input type="number" class="form-control" id="probability" name="probability" min="0" max="100" value="50">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="assigned_to" class="form-label">Owner</label>
+                            <select class="form-select" id="assigned_to" name="assigned_to">
+                                <option value="">-- Unassigned --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addDealForm" class="btn btn-primary">Save Deal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Deals Modal -->
+<div class="modal fade" id="importDealsModal" tabindex="-1" aria-labelledby="importDealsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importDealsModalLabel">Import Deals</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importDealsForm" method="post" action="{% url 'admin_deal_import' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="import_file" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="import_file" name="import_file" accept=".csv" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="header_row" name="header_row" checked>
+                        <label class="form-check-label" for="header_row">
+                            First row contains headers
+                        </label>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">CSV Format</h6>
+                        <p class="mb-0">Your CSV file should have the following columns:</p>
+                        <ul class="mb-0">
+                            <li>name (required)</li>
+                            <li>account_id (required)</li>
+                            <li>amount (required)</li>
+                            <li>stage (required)</li>
+                            <li>expected_close_date (YYYY-MM-DD)</li>
+                            <li>probability</li>
+                            <li>assigned_to_id</li>
+                            <li>description</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <a href="{% url 'admin_download_deal_template' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-2"></i> Download Template
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="importDealsForm" class="btn btn-primary">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        const dealsTable = $('#dealsTable').DataTable({
+            responsive: true,
+            dom: '<"top"lf>rt<"bottom"ip><"clear">',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search deals..."
+            },
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            columnDefs: [
+                { orderable: false, targets: [0, 8] } // Disable sorting on checkbox and actions columns
+            ]
+        });
+        
+        // Get chart data from data attributes
+        const chartData = document.getElementById('chartData');
+        const stageLabels = JSON.parse(chartData.getAttribute('data-labels'));
+        const stageCounts = JSON.parse(chartData.getAttribute('data-counts'));
+        const stageValues = JSON.parse(chartData.getAttribute('data-values'));
+        
+        // Deal Pipeline Chart
+        const dealPipelineCtx = document.getElementById('dealPipelineChart').getContext('2d');
+        const dealPipelineChart = new Chart(dealPipelineCtx, {
+            type: 'bar',
+            data: {
+                labels: stageLabels,
+                datasets: [{
+                    label: 'Number of Deals',
+                    data: stageCounts,
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Value ($)',
+                    data: stageValues,
+                    backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Deals'
+                        }
+                    },
+                    y1: {
+                        position: 'right',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Value ($)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Sales Performance Chart
+        const salesPerformanceCtx = document.getElementById('salesPerformanceChart').getContext('2d');
+        const salesPerformanceChart = new Chart(salesPerformanceCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Won Deals',
+                    data: [25000, 35000, 45000, 30000, 50000, 65000, 40000, 55000, 70000, 60000, 75000, 80000],
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Lost Deals',
+                    data: [15000, 20000, 25000, 18000, 30000, 35000, 22000, 28000, 32000, 26000, 38000, 30000],
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Select All Deals Checkbox
+        document.getElementById('selectAllDeals').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.deal-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
+        
+        // Filter Button
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            const searchValue = document.getElementById('dealSearchInput').value.toLowerCase();
+            const stageFilter = document.getElementById('stageFilter').value;
+            const accountFilter = document.getElementById('accountFilter').value;
+            
+            // Reset DataTable search and draw with new search value
+            dealsTable.search(searchValue).draw();
+            
+            // Apply custom filtering for stage and account
+            // Note: In a real implementation, you would likely use server-side filtering
+            // or DataTables API for custom column filtering
+            showNotification('Info', 'Filters applied', 'info');
+        });
+        
+        // Export Deals Button
+        document.getElementById('exportDealsBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // In a real implementation, this would trigger an API call to export the deals
+            showNotification('Success', 'Deals exported successfully!', 'success');
+            
+            // Simulate file download
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.download = 'deals_export.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }, 1000);
+        });
+        
+        // Set expected close date default value to 30 days from now
+        const closeDate = new Date();
+        closeDate.setDate(closeDate.getDate() + 30);
+        document.getElementById('expected_close_date').valueAsDate = closeDate;
+    });
+    
+    // Deal Actions
+    function markAsWon(dealId) {
+        if (confirm('Are you sure you want to mark this deal as won?')) {
+            // In a real implementation, this would trigger an API call to update the deal
+            showNotification('Success', 'Deal marked as won successfully!', 'success');
+        }
+    }
+    
+    function markAsLost(dealId) {
+        if (confirm('Are you sure you want to mark this deal as lost?')) {
+            // In a real implementation, this would trigger an API call to update the deal
+            showNotification('Success', 'Deal marked as lost successfully!', 'success');
+        }
+    }
+    
+    function deleteDeal(dealId) {
+        if (confirm('Are you sure you want to delete this deal? This action cannot be undone.')) {
+            // In a real implementation, this would trigger an API call to delete the deal
+            showNotification('Success', 'Deal deleted successfully!', 'success');
+        }
+    }
+    
+    // Bulk Actions
+    function bulkAction(action) {
+        const selectedDeals = [];
+        document.querySelectorAll('.deal-checkbox:checked').forEach(checkbox => {
+            selectedDeals.push(checkbox.value);
+        });
+        
+        if (selectedDeals.length === 0) {
+            showNotification('Warning', 'No deals selected', 'warning');
+            return;
+        }
+        
+        switch (action) {
+            case 'change-stage':
+                // Show stage change modal or dropdown
+                showNotification('Info', `Changing stage for ${selectedDeals.length} deals`, 'info');
+                break;
+            case 'assign-owner':
+                // Show owner assignment modal or dropdown
+                showNotification('Info', `Assigning owner for ${selectedDeals.length} deals`, 'info');
+                break;
+            case 'mark-won':
+                if (confirm(`Are you sure you want to mark ${selectedDeals.length} deals as won?`)) {
+                    showNotification('Success', `${selectedDeals.length} deals marked as won successfully!`, 'success');
+                }
+                break;
+            case 'mark-lost':
+                if (confirm(`Are you sure you want to mark ${selectedDeals.length} deals as lost?`)) {
+                    showNotification('Success', `${selectedDeals.length} deals marked as lost successfully!`, 'success');
+                }
+                break;
+            case 'delete':
+                if (confirm(`Are you sure you want to delete ${selectedDeals.length} deals? This action cannot be undone.`)) {
+                    showNotification('Success', `${selectedDeals.length} deals deleted successfully!`, 'success');
+                }
+                break;
+        }
+    }
+    
+    // Notification function (same as in other templates)
+    function showNotification(title, message, type = 'success') {
+        const icon = type === 'success' ? 'check-circle' :
+                    type === 'warning' ? 'exclamation-triangle' :
+                    type === 'error' ? 'times-circle' : 'info-circle';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${icon} me-2"></i>
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '5';
+            document.body.appendChild(container);
+            container.appendChild(toast);
+        } else {
+            toastContainer.appendChild(toast);
+        }
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            animation: true,
+            autohide: true,
+            delay: 5000
+        });
+        
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

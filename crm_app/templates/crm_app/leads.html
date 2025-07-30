@@ -1,0 +1,1385 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Leads - LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Leads</h1>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">All Leads</h5>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLeadModal">
+                <i class="fas fa-plus"></i> Add Lead
+            </button>
+        </div>
+        <div class="card-body">
+            <!-- Search Filters -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="search-input" class="form-control" placeholder="Search leads...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="status-filter" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="qualified">Qualified</option>
+                        <option value="unqualified">Unqualified</option>
+                        <option value="converted">Converted</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="source-filter" class="form-select">
+                        <option value="">All Sources</option>
+                        <option value="website_demo">Website - {Demo}</option>
+                        <option value="website_live">Website - {live}</option>
+                        <option value="phone">Phone</option>
+                        <option value="referral">Referral</option>
+                        <option value="email">Email</option>
+                        <option value="social_media">Social Media</option>
+                        <option value="trade_show">Trade Show</option>
+                        <option value="email_campaign">Email Campaign</option>
+                        <option value="cold_call">Cold Call</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button id="clear-filters" class="btn btn-outline-secondary">Clear Filters</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" id="leads-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <a href="?sort=first_name&direction={% if sort_field == 'first_name' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none">
+                                    Name
+                                    {% if sort_field == 'first_name' %}
+                                        <i class="fas fa-sort-{% if sort_direction == 'asc' %}up{% else %}down{% endif %}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="?sort=email&direction={% if sort_field == 'email' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none">
+                                    Email
+                                    {% if sort_field == 'email' %}
+                                        <i class="fas fa-sort-{% if sort_direction == 'asc' %}up{% else %}down{% endif %}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>Phone</th>
+                            <th>
+                                <a href="?sort=lead_status&direction={% if sort_field == 'lead_status' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none">
+                                    Status
+                                    {% if sort_field == 'lead_status' %}
+                                        <i class="fas fa-sort-{% if sort_direction == 'asc' %}up{% else %}down{% endif %}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="?sort=lead_source&direction={% if sort_field == 'lead_source' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none">
+                                    Source
+                                    {% if sort_field == 'lead_source' %}
+                                        <i class="fas fa-sort-{% if sort_direction == 'asc' %}up{% else %}down{% endif %}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="?sort=created_at&direction={% if sort_field == 'created_at' and sort_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none">
+                                    Lead Created
+                                    {% if sort_field == 'created_at' %}
+                                        <i class="fas fa-sort-{% if sort_direction == 'asc' %}up{% else %}down{% endif %}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>Assigned To</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if leads %}
+                            {% for lead in leads %}
+                                <tr data-lead-id="{{ lead.id }}">
+                                    <td>
+                                        <a href="{% url 'lead-detail-page' lead.id %}">
+                                            {{ lead.first_name }} {{ lead.last_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ lead.email|default:"" }}</td>
+                                    <td>
+                                        {% if lead.phone %}
+                                            <span class="masked-phone" data-phone="{{ lead.phone }}">XXXXXX{{ lead.phone|slice:"-4:" }}</span>
+                                            <button class="btn btn-sm toggle-phone" title="Toggle phone visibility">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if lead.lead_status == 'new' %}
+                                            <span class="badge bg-primary">New</span>
+                                        {% elif lead.lead_status == 'contacted' %}
+                                            <span class="badge bg-info">Contacted</span>
+                                        {% elif lead.lead_status == 'qualified' %}
+                                            <span class="badge bg-success">Qualified</span>
+                                        {% elif lead.lead_status == 'unqualified' %}
+                                            <span class="badge bg-warning">Unqualified</span>
+                                        {% elif lead.lead_status == 'converted' %}
+                                            <span class="badge bg-dark">Converted</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if lead.lead_source == 'website_demo' %}
+                                            <span class="badge bg-info">Website - {Demo}</span>
+                                        {% elif lead.lead_source == 'website_live' %}
+                                            <span class="badge bg-success">Website - {live}</span>
+                                        {% elif lead.lead_source == 'phone' %}
+                                            <span class="badge bg-secondary">Phone</span>
+                                        {% elif lead.lead_source == 'referral' %}
+                                            <span class="badge bg-warning">Referral</span>
+                                        {% elif lead.lead_source == 'email' %}
+                                            <span class="badge bg-primary">Email</span>
+                                        {% elif lead.lead_source == 'social_media' %}
+                                            <span class="badge bg-info">Social Media</span>
+                                        {% elif lead.lead_source == 'trade_show' %}
+                                            <span class="badge bg-dark">Trade Show</span>
+                                        {% elif lead.lead_source == 'email_campaign' %}
+                                            <span class="badge bg-primary">Email Campaign</span>
+                                        {% elif lead.lead_source == 'cold_call' %}
+                                            <span class="badge bg-secondary">Cold Call</span>
+                                        {% elif lead.lead_source == 'event' %}
+                                            <span class="badge bg-success">Event</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Other</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ lead.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if lead.assigned_to %}
+                                            {{ lead.assigned_to.first_name }} {{ lead.assigned_to.last_name }}
+                                        {% else %}
+                                            <span class="text-muted">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex">
+                                            <a href="{% url 'lead-detail-page' lead.id %}" class="btn btn-sm btn-info me-1" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if lead.lead_status != 'converted' %}
+                                            <a href="{% url 'lead-edit-page' lead.id %}" class="btn btn-sm btn-primary me-1" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-secondary me-1" disabled title="Converted leads cannot be edited">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% endif %}
+                                            {% if lead.lead_status != 'converted' %}
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-success dropdown-toggle" type="button" id="statusDropdown{{ lead.id }}" data-bs-toggle="dropdown" aria-expanded="false" title="Update Status">
+                                                    <i class="fas fa-exchange-alt"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="statusDropdown{{ lead.id }}" style="position: absolute; z-index: 1000;">
+                                                    <li><h6 class="dropdown-header">Update Status</h6></li>
+                                                    <li><a class="dropdown-item status-update" href="javascript:void(0)" data-lead-id="{{ lead.id }}" data-status="new">New</a></li>
+                                                    <li><a class="dropdown-item status-update" href="javascript:void(0)" data-lead-id="{{ lead.id }}" data-status="contacted">Contacted</a></li>
+                                                    <li><a class="dropdown-item status-update" href="javascript:void(0)" data-lead-id="{{ lead.id }}" data-status="qualified">Qualified</a></li>
+                                                    <li><a class="dropdown-item status-update" href="javascript:void(0)" data-lead-id="{{ lead.id }}" data-status="unqualified">Unqualified</a></li>
+                                                    <li><a class="dropdown-item status-update" href="javascript:void(0)" data-lead-id="{{ lead.id }}" data-status="converted">Converted</a></li>
+                                                </ul>
+                                            </div>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-secondary" disabled title="Converted leads cannot be updated">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    {% if total_leads == 0 %}
+                                        No leads found
+                                    {% else %}
+                                        Error loading leads. Please try again.
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Lead Modal -->
+<div class="modal fade" id="addLeadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Lead</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Lead form with organized sections -->
+                <form id="lead-form">
+                    <!-- Basic Information Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-primary">Basic Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2 mb-3">
+                                    <label for="salutation" class="form-label">Salutation</label>
+                                    <select class="form-select" id="salutation" name="salutation">
+                                        <option value="">--None--</option>
+                                        <option value="mr">Mr.</option>
+                                        <option value="ms">Ms.</option>
+                                        <option value="mrs">Mrs.</option>
+                                        <option value="dr">Dr.</option>
+                                        <option value="prof">Prof.</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label for="first_name" class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label for="last_name" class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="mobile" class="form-label">Mobile</label>
+                                    <input type="text" class="form-control" id="mobile" name="mobile">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="company" class="form-label">Company</label>
+                                    <input type="text" class="form-control" id="company" name="company">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="job_title" class="form-label">Job Title</label>
+                                    <input type="text" class="form-control" id="job_title" name="job_title">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="website" class="form-label">Website</label>
+                                    <input type="url" class="form-control" id="website" name="website">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status & Classification Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-primary">Status & Classification</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="lead_status" class="form-label">Status *</label>
+                                    <select class="form-select" id="lead_status" name="lead_status" required>
+                                        <option value="new">New</option>
+                                        <option value="contacted">Contacted</option>
+                                        <option value="qualified">Qualified</option>
+                                        <option value="unqualified">Unqualified</option>
+                                        <option value="converted">Converted</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="lead_source" class="form-label">Lead Source *</label>
+                                    <select class="form-select" id="lead_source" name="lead_source" required>
+                                        <option value="">-- Select Source --</option>
+                                        <option value="website_demo">Website - {Demo}</option>
+                                        <option value="website_live">Website - {live}</option>
+                                        <option value="phone">Phone Inquiry</option>
+                                        <option value="referral">Referral</option>
+                                        <option value="email">Email</option>
+                                        <option value="social_media">Social Media</option>
+                                        <option value="trade_show">Trade Show</option>
+                                        <option value="email_campaign">Email Campaign</option>
+                                        <option value="cold_call">Cold Call</option>
+                                        <option value="event">Event</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="industry" class="form-label">Industry</label>
+                                    <select class="form-select" id="industry" name="industry">
+                                        <option value="">--None--</option>
+                                        <!-- Industries will be loaded dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="annual_revenue" class="form-label">Annual Revenue</label>
+                                    <input type="number" class="form-control" id="annual_revenue" name="annual_revenue">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="employees" class="form-label">Number of Employees</label>
+                                    <input type="number" class="form-control" id="employees" name="employees">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assignment & Notes Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0 text-primary">Assignment & Notes</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="assigned_to" class="form-label">Assigned To</label>
+                                    <select class="form-select" id="assigned_to" name="assigned_to">
+                                        <option value="">-- Unassigned --</option>
+                                        <!-- Users will be loaded dynamically -->
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="manager_username" class="form-label">Manager</label>
+                                    <input type="text" class="form-control" id="manager_username" name="manager_username" value="{{ logged_in_user_manager_username|default_if_none:'' }}">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Task option toggle -->
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="add_task_checkbox">
+                <label class="form-check-label" for="add_task_checkbox">Create Task for this Lead</label>
+            </div>
+
+            <!-- Task Section -->
+            <div class="card mb-3" id="task-section" style="display: none;">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-primary">Task Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="task_subject" class="form-label">Subject *</label>
+                            <input type="text" class="form-control" id="task_subject">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="task_due_date" class="form-label">Due Date *</label>
+                            <input type="datetime-local" class="form-control" id="task_due_date">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="task_priority" class="form-label">Priority</label>
+                            <select class="form-select" id="task_priority">
+                                <option value="high">High</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="task_assigned_to" class="form-label">Assigned To *</label>
+                            <select class="form-select" id="task_assigned_to">
+                                <option value="">Select User</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="task_description" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-lead-btn">Save Lead</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom CSS for dropdown positioning */
+    .table-responsive {
+        overflow: visible !important; /* Allow dropdowns to be visible outside table bounds */
+    }
+    
+    .dropdown-menu {
+        position: absolute !important;
+        z-index: 1050 !important; /* Higher than default Bootstrap z-index */
+        transform: none !important; /* Prevent Bootstrap transformations */
+    }
+    
+    /* Ensure dropdown container has proper position context */
+    .dropdown {
+        position: relative !important;
+    }
+    
+    /* Notification styling */
+    .notification-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 350px;
+    }
+    
+    .notification {
+        padding: 15px 20px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        color: white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideIn 0.5s ease;
+    }
+    
+    .notification-success {
+        background-color: #28a745;
+    }
+    
+    .notification-error {
+        background-color: #dc3545;
+    }
+    
+    .notification-info {
+        background-color: #17a2b8;
+    }
+    
+    .notification-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .close-notification {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+</style>
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
+    
+    <!-- Convert Lead Modal -->
+    <div class="modal fade" id="convertLeadModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Convert Lead</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Converting this lead will create an account and a contact based on the lead information.</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> The account and contact will be created automatically with the lead's information.
+                    </div>
+                    
+                    <form id="convert-lead-form">
+                        <input type="hidden" id="convert-lead-id" value="">
+                        <h6 class="mb-3">Optional: Create Deal</h6>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="create-deal-checkbox">
+                            <label class="form-check-label" for="create-deal-checkbox">
+                                Create a new deal for this lead
+                            </label>
+                        </div>
+                        
+                        <div id="deal-fields" class="d-none">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="deal-name" class="form-label">Deal Name</label>
+                                    <input type="text" class="form-control" id="deal-name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="deal-amount" class="form-label">Amount</label>
+                                    <input type="number" class="form-control" id="deal-amount" min="0" step="0.01">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="deal-closing-date" class="form-label">Closing Date</label>
+                                    <input type="date" class="form-control" id="deal-closing-date">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="deal-stage" class="form-label">Stage</label>
+                                    <select class="form-select" id="deal-stage">
+                                        <option value="qualification">Qualification</option>
+                                        <option value="needs_analysis">Needs Analysis</option>
+                                        <option value="value_proposition">Value Proposition</option>
+                                        <option value="decision_makers">Decision Makers</option>
+                                        <option value="proposal">Proposal</option>
+                                        <option value="negotiation">Negotiation</option>
+                                        <option value="closed_won">Closed Won</option>
+                                        <option value="closed_lost">Closed Lost</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="deal-description" class="form-label">Description</label>
+                                <textarea class="form-control" id="deal-description" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirm-convert-btn">Convert Lead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to get CSRF cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the phone toggle buttons
+        setupPhoneToggles();
+
+        // Add Lead Modal: Set manager username when modal is shown
+        const addLeadModalElement = document.getElementById('addLeadModal');
+        const managerUsernameInput = document.getElementById('manager_username');
+        const loggedInUserManager = "{{ logged_in_user_manager_username|default_if_none:'' }}";
+
+        if (addLeadModalElement && managerUsernameInput) {
+            addLeadModalElement.addEventListener('show.bs.modal', function () {
+                // Set the manager username from the template variable
+                managerUsernameInput.value = loggedInUserManager;
+                
+                // Optional: If you want to make it readonly after setting, you can do so.
+                // For now, it's left editable as per the image (though it was readonly before).
+                // If it should be readonly, add:
+                // managerUsernameInput.readOnly = true;
+            });
+        }
+        
+        loadUsers();
+        loadIndustries();
+
+        // Toggle Task section visibility
+        const addTaskToggle = document.getElementById('add_task_checkbox');
+        if (addTaskToggle) {
+            addTaskToggle.addEventListener('change', function() {
+                const taskSection = document.getElementById('task-section');
+                if (taskSection) {
+                    taskSection.style.display = this.checked ? 'block' : 'none';
+                }
+            });
+        }
+        
+        // Set up save lead button
+        document.getElementById('save-lead-btn').addEventListener('click', saveNewLead);
+        
+        // Set current user as manager
+        document.getElementById('manager_username').value = '{{ request.user.username }}';
+    });
+    
+    // Set up phone toggle functionality
+    function setupPhoneToggles() {
+        document.querySelectorAll('.toggle-phone').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const phoneSpan = this.previousElementSibling;
+                const fullPhone = phoneSpan.getAttribute('data-phone');
+                const icon = this.querySelector('i');
+                
+                // Hide any other open phone numbers
+                document.querySelectorAll('.masked-phone.showing-full').forEach(openSpan => {
+                    if (openSpan !== phoneSpan) {
+                        const openPhone = openSpan.getAttribute('data-phone');
+                        openSpan.textContent = 'XXXXXX' + openPhone.slice(-4);
+                        openSpan.classList.remove('showing-full');
+                        
+                        // Update the corresponding icon
+                        const openIcon = openSpan.nextElementSibling.querySelector('i');
+                        openIcon.classList.remove('fa-eye-slash');
+                        openIcon.classList.add('fa-eye');
+                    }
+                });
+                
+                if (phoneSpan.classList.contains('showing-full')) {
+                    // Hide the number
+                    phoneSpan.textContent = 'XXXXXX' + fullPhone.slice(-4);
+                    phoneSpan.classList.remove('showing-full');
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    // Show the number
+                    phoneSpan.textContent = fullPhone;
+                    phoneSpan.classList.add('showing-full');
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+        });
+    }
+    
+    // Load industries for dropdown
+    async function loadIndustries() {
+        try {
+            const data = await apiRequest('industries/');
+            const industryDropdown = document.getElementById('industry');
+            
+            // Keep the first option (--None--)
+            const firstOption = industryDropdown.options[0];
+            industryDropdown.innerHTML = '';
+            industryDropdown.appendChild(firstOption);
+            
+            // Add industries to dropdown
+            if (data && data.results) {
+                data.results.forEach(industry => {
+                    const option = document.createElement('option');
+                    option.value = industry.id;
+                    option.textContent = industry.name;
+                    industryDropdown.appendChild(option);
+                });
+            } else if (data && Array.isArray(data)) {
+                data.forEach(industry => {
+                    const option = document.createElement('option');
+                    option.value = industry.id;
+                    option.textContent = industry.name;
+                    industryDropdown.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading industries:', error);
+        }
+    };
+    
+    // Document click handler to close phone numbers when clicking elsewhere
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.toggle-phone') && !event.target.closest('.masked-phone')) {
+            document.querySelectorAll('.masked-phone.showing-full').forEach(openSpan => {
+                const openPhone = openSpan.getAttribute('data-phone');
+                openSpan.textContent = 'XXXXXX' + openPhone.slice(-4);
+                openSpan.classList.remove('showing-full');
+                
+                // Update the corresponding icon
+                const openIcon = openSpan.nextElementSibling.querySelector('i');
+                openIcon.classList.remove('fa-eye-slash');
+                openIcon.classList.add('fa-eye');
+            });
+        }
+    });
+    
+    // This section previously contained the remainder of the populateLeadsTable function,
+    // which has been removed since leads are now rendered server-side
+    
+    // Save new lead
+    async function saveNewLead() {
+        const form = document.getElementById('lead-form');
+        
+        // Validate required fields
+        const requiredFields = ['first_name', 'last_name', 'email', 'lead_source', 'lead_status'];
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            const input = document.getElementById(field);
+            if (!input.value.trim()) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            showNotification('Error', 'Please fill in all required fields', 'error');
+            return;
+        }
+        
+        // Get form data
+        const formData = {
+            // Basic Information
+            salutation: document.getElementById('salutation').value || null,
+            first_name: document.getElementById('first_name').value,
+            last_name: document.getElementById('last_name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            mobile: document.getElementById('mobile').value || null,
+            company: document.getElementById('company').value || null,
+            title: document.getElementById('job_title').value || null, // Using the correct field name for the Lead model
+            website: document.getElementById('website').value || null,
+            address: document.getElementById('address').value || null,
+            
+            // Status & Classification
+            lead_source: document.getElementById('lead_source').value,
+            lead_status: document.getElementById('lead_status').value,
+            industry: document.getElementById('industry').value || null,
+            
+            // Handle numeric fields
+            annual_revenue: document.getElementById('annual_revenue').value ? parseFloat(document.getElementById('annual_revenue').value) : null,
+            employees: document.getElementById('employees').value ? parseInt(document.getElementById('employees').value) : null,
+            
+            // Assignment & Notes
+            assigned_to: document.getElementById('assigned_to').value || null,
+            description: document.getElementById('description').value || null,
+            manager_username: '{{ request.user.username }}' // Explicitly set the manager_username to the current user
+        };
+        
+        // Show loading notification
+        showNotification('Info', 'Creating lead...', 'info');
+        
+        try {
+            console.log('Sending lead creation request with data:', formData);
+            const response = await fetch('/api/leads/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            // Log response for debugging
+            console.log('Lead creation response status:', response.status);
+            
+            // Handle non-2xx responses
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server error response:', errorText);
+                throw new Error(`Server returned ${response.status}: ${errorText}`);
+            }
+            
+            // Parse the response
+            const data = await response.json();
+            console.log('Lead created successfully:', data);
+            
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addLeadModal'));
+            modal.hide();
+            form.reset();
+            
+            // Set manager username again after form reset
+            document.getElementById('manager_username').value = '{{ request.user.username }}';
+            
+            // Clear any existing notifications
+            document.getElementById('notification-container').innerHTML = '';
+            
+            // Show success notification
+            showNotification('Success', `Lead '${data.first_name} ${data.last_name}' created successfully`, 'success');
+            
+            // Create task if requested
+            const createTask = document.getElementById('add_task_checkbox').checked;
+            if (createTask) {
+                const subject = document.getElementById('task_subject').value.trim();
+                const dueDate = document.getElementById('task_due_date').value;
+                const priority = document.getElementById('task_priority').value;
+                const assignedTo = document.getElementById('task_assigned_to').value;
+                const description = document.getElementById('task_description').value.trim();
+
+                if (!subject || !dueDate || !assignedTo) {
+                    showNotification('Error', 'Please fill in all required task fields', 'error');
+                } else {
+                    const taskData = {
+                        subject: subject,
+                        due_date: dueDate,
+                        priority: priority,
+                        description: description || null,
+                        status: 'not_started',
+                        related_lead: data.id,
+                        assigned_to: assignedTo
+                    };
+                    try {
+                        const taskResp = await fetch('/api/tasks/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: JSON.stringify(taskData)
+                        });
+                        if (taskResp.ok) {
+                            showNotification('Success', 'Task created successfully', 'success');
+                        } else {
+                            const errTxt = await taskResp.text();
+                            throw new Error(errTxt);
+                        }
+                    } catch (taskErr) {
+                        showNotification('Error', `Failed to create task: ${taskErr.message}`, 'error');
+                    }
+                }
+            }
+            
+            // Reload leads list
+            window.location.reload(); // Refresh the table to include the new lead (and task if created)
+            
+        } catch (error) {
+            console.error('Error creating lead:', error);
+            
+            // Clear any existing notifications
+            document.getElementById('notification-container').innerHTML = '';
+            
+            // Show detailed error message
+            showNotification('Error', `Failed to create lead: ${error.message}`, 'error');
+        }
+    }
+    
+    // Helper function for lead status color
+    function getLeadStatusColor(status) {
+        switch (status) {
+            case 'new': return 'primary';
+            case 'contacted': return 'info';
+            case 'qualified': return 'success';
+            case 'unqualified': return 'danger';
+            case 'converted': return 'warning';
+            default: return 'secondary';
+        }
+    }
+    
+    // Show convert lead modal
+    function showConvertLeadModal(leadId) {
+        // Set the lead ID in the hidden input
+        document.getElementById('convert-lead-id').value = leadId;
+        
+        // Initialize the modal
+        initConvertLeadModal();
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('convertLeadModal'));
+        modal.show();
+    }
+    
+    // Initialize convert lead modal
+    function initConvertLeadModal() {
+        // Set today's date as default for deal closing date
+        const today = new Date();
+        const formattedDate = today.toISOString().substr(0, 10);
+        const closingDateInput = document.getElementById('deal-closing-date');
+        if (closingDateInput) {
+            closingDateInput.value = formattedDate;
+        }
+        
+        // Reset deal checkbox and fields
+        const createDealCheckbox = document.getElementById('create-deal-checkbox');
+        const dealFields = document.getElementById('deal-fields');
+        
+        if (createDealCheckbox && dealFields) {
+            createDealCheckbox.checked = false; // Reset checkbox
+            dealFields.classList.add('d-none'); // Hide deal fields by default
+        }
+    }
+    
+    // Convert lead to account and contact
+    async function convertLead() {
+        try {
+            // Get the lead ID from the hidden input
+            const leadId = document.getElementById('convert-lead-id').value;
+            if (!leadId) {
+                showNotification('Error', 'Lead ID not found', 'error');
+                return;
+            }
+            
+            // Prepare data for conversion
+            const createDeal = document.getElementById('create-deal-checkbox').checked;
+            let data = {};
+            
+            // Add deal data if checkbox is checked
+            if (createDeal) {
+                data.create_deal = true;
+                data.deal = {
+                    name: document.getElementById('deal-name').value,
+                    amount: document.getElementById('deal-amount').value,
+                    closing_date: document.getElementById('deal-closing-date').value,
+                    stage: document.getElementById('deal-stage').value,
+                    description: document.getElementById('deal-description').value
+                };
+            }
+            
+            // Call the convert API endpoint
+            const response = await fetch(`/api/leads/${leadId}/convert/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                showNotification('Success', 'Lead successfully converted! Account and contact records have been created.', 'success');
+                
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('convertLeadModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Refresh the page to reflect the changes properly
+                window.location.reload();
+            } else {
+                const errorData = await response.json();
+                showNotification('Error', errorData.error || 'Failed to convert lead', 'error');
+            }
+        } catch (error) {
+            console.error('Error converting lead:', error);
+            showNotification('Error', 'An error occurred while converting the lead', 'error');
+        }
+    }
+    
+    // Using the getCookie function defined above
+    
+    // View lead details
+    function viewLead(id) {
+        if (!id) return;
+        window.location.href = `/leads/${id}/`;
+    }
+    
+    // Edit lead
+    function editLead(id) {
+        if (!id) return;
+        window.location.href = `/leads/${id}/edit/`;
+    }
+    
+    // Delete lead
+    function deleteLead(id) {
+        if (!id) return;
+        
+        if (confirm('Are you sure you want to delete this lead? This action cannot be undone.')) {
+            apiRequest(`leads/${id}/`, 'DELETE')
+                .then(response => {
+                    showNotification('Success', 'Lead deleted successfully', 'success');
+                    // Reload leads after deletion
+                    loadLeads();
+                })
+                .catch(error => {
+                    showNotification('Error', 'Failed to delete lead', 'error');
+                    console.error('Delete error:', error);
+                });
+        }
+    }
+    
+    // Load users using the new API endpoint
+    async function loadUsers() {
+        try {
+            // Use the new API endpoint to get filtered users based on manager relationship
+            const users = await apiRequest('users-by-manager/');
+            console.log('Users by manager data:', users);
+            
+            // Populate the dropdown with the filtered users
+            populateUserDropdown(users);
+        } catch (error) {
+            console.error('Error loading users:', error);
+            // Show a message in the dropdown if there's an error
+            const dropdown = document.getElementById('assigned_to');
+            
+            // Keep the first "Unassigned" option
+            const firstOption = dropdown.options[0];
+            dropdown.innerHTML = '';
+            dropdown.appendChild(firstOption);
+            
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "Error loading users";
+            option.disabled = true;
+            dropdown.appendChild(option);
+        }
+    }
+    
+    // Populate user dropdown with filtered users from API
+    function populateUserDropdown(users) {
+        const dropdown = document.getElementById('assigned_to');
+        
+        // Keep the first "Unassigned" option
+        const firstOption = dropdown.options[0];
+        dropdown.innerHTML = '';
+        dropdown.appendChild(firstOption);
+        
+        let usersList = [];
+        
+        // Handle different API response formats
+        if (users && users.results) {
+            usersList = users.results;
+        } else if (users && Array.isArray(users)) {
+            usersList = users;
+        }
+        
+        console.log('Users to populate dropdown:', usersList);
+        
+        // Add each user to the dropdown
+        if (usersList.length > 0) {
+            usersList.forEach(user => {
+                const text = `${user.first_name || ''} ${user.last_name || ''} (${user.username || 'unknown'})`;
+                const leadOpt = document.createElement('option');
+                leadOpt.value = user.id;
+                leadOpt.textContent = text;
+                dropdown.appendChild(leadOpt);
+
+                // Also add to task dropdown if it exists
+                const taskDropdown = document.getElementById('task_assigned_to');
+                if (taskDropdown) {
+                    const taskOpt = document.createElement('option');
+                    taskOpt.value = user.id;
+                    taskOpt.textContent = text;
+                    taskDropdown.appendChild(taskOpt);
+                }
+            });
+            
+            // If no options were added (except the default one)
+            if (dropdown.options.length <= 1) {
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = "No users available";
+                option.disabled = true;
+                dropdown.appendChild(option);
+            }
+            const taskDropdownFinal = document.getElementById('task_assigned_to');
+            if (taskDropdownFinal && taskDropdownFinal.options.length <= 1) {
+                const option = document.createElement('option');
+                option.value = "";
+                option.textContent = "No users available";
+                option.disabled = true;
+                taskDropdownFinal.appendChild(option);
+            }
+        }
+        
+        // If no options were added (except the default one)
+        if (dropdown.options.length <= 1) {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "No users available";
+            option.disabled = true;
+            dropdown.appendChild(option);
+        }
+    }
+    
+    // Set up event listeners for status update links
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listeners to all status update links
+        document.querySelectorAll('.status-update').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const leadId = this.getAttribute('data-lead-id');
+                const newStatus = this.getAttribute('data-status');
+                updateLeadStatus(leadId, newStatus);
+            });
+        });
+        
+        // Add event listener for convert lead confirmation button
+        const confirmConvertBtn = document.getElementById('confirm-convert-btn');
+        if (confirmConvertBtn) {
+            confirmConvertBtn.addEventListener('click', convertLead);
+        }
+        
+        // Setup checkbox for deal fields toggle
+        const createDealCheckbox = document.getElementById('create-deal-checkbox');
+        const dealFields = document.getElementById('deal-fields');
+        
+        if (createDealCheckbox && dealFields) {
+            createDealCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    dealFields.classList.remove('d-none');
+                } else {
+                    dealFields.classList.add('d-none');
+                }
+            });
+        }
+        
+        // Setup search and filter functionality
+        setupSearchFilters();
+    });
+    
+    // Function to show notifications
+    function showNotification(title, message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        // Create notification content
+        const content = document.createElement('div');
+        content.innerHTML = `<strong>${title}:</strong> ${message}`;
+        
+        // Create close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-notification';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', () => {
+            notification.style.animation = 'fadeOut 0.5s ease forwards';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        });
+        
+        // Add content and close button to notification
+        notification.appendChild(content);
+        notification.appendChild(closeBtn);
+        
+        // Add notification to container
+        const container = document.getElementById('notification-container');
+        container.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 500);
+            }
+        }, 5000);
+    }
+    
+    // Function to update lead status
+    // Function to set up search and filter functionality
+    function setupSearchFilters() {
+        const searchInput = document.getElementById('search-input');
+        const statusFilter = document.getElementById('status-filter');
+        const sourceFilter = document.getElementById('source-filter');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const leadsTable = document.getElementById('leads-table');
+        const tableRows = Array.from(leadsTable.querySelectorAll('tbody tr'));
+        
+        // Function to filter the table
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value.toLowerCase();
+            const sourceValue = sourceFilter.value.toLowerCase();
+            
+            tableRows.forEach(row => {
+                const leadName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const leadEmail = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const leadStatus = row.querySelector('td:nth-child(4) .badge').textContent.toLowerCase();
+                const leadStatusValue = getStatusValueFromText(leadStatus);
+                const leadSource = row.querySelector('td:nth-child(5) .badge').textContent.toLowerCase();
+                const leadSourceValue = getSourceValueFromText(leadSource);
+                
+                // Check if row matches all active filters
+                const matchesSearch = leadName.includes(searchTerm) || leadEmail.includes(searchTerm);
+                const matchesStatus = statusValue === '' || leadStatusValue === statusValue;
+                const matchesSource = sourceValue === '' || leadSourceValue === sourceValue;
+                
+                // Show/hide row based on filter results
+                if (matchesSearch && matchesStatus && matchesSource) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show message if no results
+            const visibleRows = tableRows.filter(row => row.style.display !== 'none');
+            const noResultsRow = leadsTable.querySelector('.no-results-row');
+            
+            if (visibleRows.length === 0) {
+                if (!noResultsRow) {
+                    const tbody = leadsTable.querySelector('tbody');
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'no-results-row';
+                    newRow.innerHTML = `<td colspan="8" class="text-center py-3">No leads match your search criteria</td>`;
+                    tbody.appendChild(newRow);
+                }
+            } else if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+        
+        // Helper function to get status value from display text
+        function getStatusValueFromText(statusText) {
+            statusText = statusText.toLowerCase();
+            if (statusText.includes('new')) return 'new';
+            if (statusText.includes('contacted')) return 'contacted';
+            if (statusText.includes('qualified')) return 'qualified';
+            if (statusText.includes('unqualified')) return 'unqualified';
+            if (statusText.includes('converted')) return 'converted';
+            return '';
+        }
+        
+        // Helper function to get source value from display text
+        function getSourceValueFromText(sourceText) {
+            sourceText = sourceText.toLowerCase();
+            if (sourceText.includes('website') && sourceText.includes('demo')) return 'website_demo';
+            if (sourceText.includes('website') && sourceText.includes('live')) return 'website_live';
+            if (sourceText.includes('phone')) return 'phone';
+            if (sourceText.includes('referral')) return 'referral';
+            if (sourceText.includes('email') && !sourceText.includes('campaign')) return 'email';
+            if (sourceText.includes('social media')) return 'social_media';
+            if (sourceText.includes('trade show')) return 'trade_show';
+            if (sourceText.includes('email campaign')) return 'email_campaign';
+            if (sourceText.includes('cold call')) return 'cold_call';
+            if (sourceText.includes('event')) return 'event';
+            return '';
+        }
+        
+        // Set up event listeners
+        searchInput.addEventListener('input', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+        sourceFilter.addEventListener('change', filterTable);
+        
+        // Clear filters button
+        clearFiltersBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            statusFilter.value = '';
+            sourceFilter.value = '';
+            filterTable();
+        });
+    }
+    
+    async function updateLeadStatus(leadId, newStatus) {
+        try {
+            // If the new status is 'converted', show the convert lead modal instead
+            // which will create account and contact records
+            if (newStatus === 'converted') {
+                console.log(`Lead ${leadId} status changing to converted - showing convert lead modal`);
+                showConvertLeadModal(leadId);
+                return;
+            }
+            
+            // For other statuses, continue with regular status update
+            console.log(`Updating lead ${leadId} to status: ${newStatus}`);
+            
+            // First, let's verify the token is being retrieved correctly
+            const csrfToken = getCookie('csrftoken');
+            console.log('CSRF Token:', csrfToken);
+            
+            const response = await fetch(`/api/leads/${leadId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ lead_status: newStatus })
+            });
+            
+            // Log the response for debugging
+            console.log('Response status:', response.status);
+            
+            // Handle potential error responses
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                throw new Error(`Error updating lead status (${response.status}): ${errorText}`);
+            }
+            
+            // Try to parse the response as JSON
+            const updatedLead = await response.json();
+            console.log('Updated lead data:', updatedLead);
+            
+            // Get the status badge element - locate the status column more reliably
+            const row = document.querySelector(`tr[data-lead-id="${leadId}"]`);
+            if (row) {
+                // Find all table cells in the row
+                const cells = row.querySelectorAll('td');
+                // Status should be in the 4th column (index 3) based on the table headers
+                // after removing the company column
+                const statusCell = cells[3];
+                
+                if (statusCell) {
+                    const statusBadge = statusCell.querySelector('.badge');
+                    if (statusBadge) {
+                        // Update the badge text
+                        const statusText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                        statusBadge.textContent = statusText;
+                        
+                        // Update the badge color
+                        statusBadge.className = ''; // Clear old classes
+                        const bgColorClass = `bg-${getLeadStatusColor(newStatus)}`;
+                        statusBadge.classList.add('badge', bgColorClass);
+                        
+                        // Show success notification
+                        showNotification('Success', `Lead status updated to ${statusText}`, 'success');
+                    } else {
+                        console.error('Status badge not found in the status cell');
+                        window.location.reload(); // Reload as fallback
+                    }
+                } else {
+                    console.error('Status cell not found in the row');
+                    window.location.reload(); // Reload as fallback
+                }
+            } else {
+                console.error(`Row with data-lead-id="${leadId}" not found`);
+                // If row not found, reload the page to show the updated status
+                window.location.reload();
+            }
+            
+        } catch (error) {
+            console.error('Error updating lead status:', error);
+            showNotification('Error', 'Failed to update lead status. Please try again or contact support.', 'error');
+        }
+    }
+</script>
+{% endblock %}

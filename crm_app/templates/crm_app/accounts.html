@@ -1,0 +1,509 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Accounts - LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Accounts</h1>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">All Accounts</h5>
+            <div class="d-flex">
+                <div class="input-group me-3" style="width: 300px;">
+                    <input type="text" id="account-search" class="form-control" placeholder="Search accounts..." aria-label="Search accounts">
+                    <button class="btn btn-outline-secondary" type="button" id="search-clear-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                    <i class="fas fa-plus"></i> Add Account
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Account Type</th>
+                            <th>Updated At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Accounts will be loaded here via JavaScript -->
+                        <tr>
+                            <td colspan="6" class="text-center">Loading accounts...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Account Modal -->
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="account-form">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Account Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="account_type" class="form-label">Account Type</label>
+                            <select class="form-select" id="account_type" name="account_type">
+                                <option value="customer">Customer</option>
+                                <option value="competitor">Competitor</option>
+                                <option value="partner">Partner</option>
+                                <option value="reseller">Reseller</option>
+                                <option value="vendor">Vendor</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="industry" class="form-label">Industry</label>
+                            <select class="form-select" id="industry" name="industry">
+                                <option value="">Select Industry</option>
+                                <!-- Industries will be loaded here via JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="website" class="form-label">Website</label>
+                            <input type="url" class="form-control" id="website" name="website">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="annual_revenue" class="form-label">Annual Revenue</label>
+                            <input type="number" class="form-control" id="annual_revenue" name="annual_revenue">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="employees" class="form-label">Employees</label>
+                            <input type="number" class="form-control" id="employees" name="employees">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-account-btn">Save Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add account form submission
+        document.getElementById('save-account-btn').addEventListener('click', saveNewAccount);
+        
+        // Initialize form validation
+        const accountForm = document.getElementById('account-form');
+        accountForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveNewAccount();
+        });
+        
+        // Add search functionality with debounce (300ms delay)
+        const searchInput = document.getElementById('account-search');
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchAccounts();
+            }, 300);
+        });
+        
+        // Add clear search button functionality
+        document.getElementById('search-clear-btn').addEventListener('click', function() {
+            searchInput.value = '';
+            searchAccounts();
+        });
+        
+        loadAccounts();
+        loadIndustries();
+    });
+    
+    // Load accounts from API
+    async function loadAccounts() {
+        try {
+            // Show loading state
+            document.querySelector('#accounts-table tbody').innerHTML = 
+                '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading accounts...</td></tr>';
+            
+            // First get the current user's profile to get their manager_username
+            const userProfile = await apiRequest('profile/');
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            
+            if (userProfile && userProfile.manager_username) {
+                // Filter accounts by the user's manager_username
+                const data = await apiRequest(`accounts/?manager_username=${userProfile.manager_username}`);
+                
+                if (data && data.results) {
+                    // First check if any accounts have matching manager_username
+                    const managerAccounts = data.results.filter(account => 
+                        account.manager_username === userProfile.manager_username
+                    );
+                    
+                    if (managerAccounts.length > 0) {
+                        // Then filter those accounts to show only assigned to current user or unassigned
+                        const filteredAccounts = managerAccounts.filter(account => 
+                            !account.assigned_to || // unassigned accounts
+                            account.assigned_to === currentUser.id || 
+                            (account.assigned_to && account.assigned_to.id === currentUser.id)
+                        );
+                        // Store accounts for search and display them
+                        allAccounts = filteredAccounts;
+                        displayAccounts(filteredAccounts);
+                    } else {
+                        // No accounts with matching manager_username
+                        allAccounts = [];
+                        document.querySelector('#accounts-table tbody').innerHTML = 
+                            '<tr><td colspan="6" class="text-center">No accounts found with matching manager</td></tr>';
+                    }
+                } else if (data && Array.isArray(data)) {
+                    // Handle case where API returns an array directly
+                    // First check if any accounts have matching manager_username
+                    const managerAccounts = data.filter(account => 
+                        account.manager_username === userProfile.manager_username
+                    );
+                    
+                    if (managerAccounts.length > 0) {
+                        // Then filter those accounts to show only assigned to current user or unassigned
+                        const filteredAccounts = managerAccounts.filter(account => 
+                            !account.assigned_to || // unassigned accounts
+                            account.assigned_to === currentUser.id || 
+                            (account.assigned_to && account.assigned_to.id === currentUser.id)
+                        );
+                        // Store accounts for search and display them
+                        allAccounts = filteredAccounts;
+                        displayAccounts(filteredAccounts);
+                    } else {
+                        // No accounts with matching manager_username
+                        allAccounts = [];
+                        document.querySelector('#accounts-table tbody').innerHTML = 
+                            '<tr><td colspan="6" class="text-center">No accounts found with matching manager</td></tr>';
+                    }
+                } else {
+                    // No data or unexpected format
+                    allAccounts = [];
+                    document.querySelector('#accounts-table tbody').innerHTML = 
+                        '<tr><td colspan="6" class="text-center">No accounts found</td></tr>';
+                }
+            } else {
+                // No manager_username in profile, try to get all accounts
+                const data = await apiRequest('accounts/');
+                
+                if (data && data.results) {
+                    // Store accounts for search and display them
+                    allAccounts = data.results;
+                    displayAccounts(data.results);
+                } else if (data && Array.isArray(data)) {
+                    // Store accounts for search and display them
+                    allAccounts = data;
+                    displayAccounts(data);
+                } else {
+                    allAccounts = [];
+                    document.querySelector('#accounts-table tbody').innerHTML = 
+                        '<tr><td colspan="6" class="text-center">No accounts found</td></tr>';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading accounts:', error);
+            allAccounts = [];
+            document.querySelector('#accounts-table tbody').innerHTML = 
+                '<tr><td colspan="6" class="text-center">Error loading accounts</td></tr>';
+        }
+    }
+    
+    // Load industries for dropdown
+    async function loadIndustries() {
+        const data = await apiRequest('industries/');
+        if (data && data.results) {
+            const industrySelect = document.getElementById('industry');
+            data.results.forEach(industry => {
+                const option = document.createElement('option');
+                option.value = industry.id;
+                option.textContent = industry.name;
+                industrySelect.appendChild(option);
+            });
+        }
+    }
+    
+    // Store all accounts for filtering
+    let allAccounts = [];
+    
+    // Populate accounts table
+    function populateAccountsTable(accounts) {
+        // Store accounts for filtering
+        allAccounts = accounts;
+        
+        const tableBody = document.getElementById('accounts-table').getElementsByTagName('tbody')[0];
+        if (!accounts || accounts.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No accounts found</td></tr>';
+            return;
+        }
+        
+        tableBody.innerHTML = '';
+        accounts.forEach(account => {
+            const row = document.createElement('tr');
+            
+            // Format the updated_at date
+            const updatedDate = new Date(account.updated_at);
+            const formattedDate = updatedDate.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Create masked phone number with eye icon
+            const phone = account.phone || 'N/A';
+            const maskedPhone = phone !== 'N/A' ? maskPhoneNumber(phone) : 'N/A';
+            const phoneHtml = phone !== 'N/A' ? 
+                `${maskedPhone} <button class="btn btn-sm btn-link p-0 ms-2" onclick="togglePhoneVisibility(this, '${phone}')"><i class="fas fa-eye"></i></button>` : 
+                'N/A';
+            
+            row.innerHTML = `
+                <td>${account.name}</td>
+                <td>${account.email || 'N/A'}</td>
+                <td data-showing="masked" data-phone="${phone !== 'N/A' ? phone : ''}">${phoneHtml}</td>
+                <td>${getAccountTypeDisplay(account.account_type)}</td>
+                <td>${formattedDate}</td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="viewAccount(${account.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary me-1" onclick="editAccount(${account.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteAccount(${account.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // New search functionality
+    function searchAccounts() {
+        const searchInput = document.getElementById('account-search');
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        
+        // Clear the table body first
+        const tableBody = document.getElementById('accounts-table').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Searching...</td></tr>';
+        
+        // If search is empty, show all accounts
+        if (!searchTerm) {
+            displayAccounts(allAccounts);
+            return;
+        }
+        
+        // Filter accounts based on search term
+        const results = allAccounts.filter(account => {
+            return (
+                (account.name && account.name.toLowerCase().includes(searchTerm)) ||
+                (account.email && account.email.toLowerCase().includes(searchTerm)) ||
+                (account.phone && account.phone.toLowerCase().includes(searchTerm)) ||
+                (account.account_type && getAccountTypeDisplay(account.account_type).toLowerCase().includes(searchTerm))
+            );
+        });
+        
+        // Display filtered results
+        displayAccounts(results);
+    }
+    
+    // Display accounts in the table
+    function displayAccounts(accounts) {
+        const tableBody = document.getElementById('accounts-table').getElementsByTagName('tbody')[0];
+        
+        // Check if there are accounts to display
+        if (!accounts || accounts.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No accounts found</td></tr>';
+            return;
+        }
+        
+        // Clear the table body
+        tableBody.innerHTML = '';
+        
+        // Add each account to the table
+        accounts.forEach(account => {
+            const row = document.createElement('tr');
+            
+            // Format the updated_at date
+            const updatedDate = new Date(account.updated_at);
+            const formattedDate = updatedDate.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Create masked phone number with eye icon
+            const phone = account.phone || 'N/A';
+            const maskedPhone = phone !== 'N/A' ? maskPhoneNumber(phone) : 'N/A';
+            const phoneHtml = phone !== 'N/A' ? 
+                `${maskedPhone} <button class="btn btn-sm btn-link p-0 ms-2" onclick="togglePhoneVisibility(this, '${phone}')"><i class="fas fa-eye"></i></button>` : 
+                'N/A';
+            
+            row.innerHTML = `
+                <td>${account.name}</td>
+                <td>${account.email || 'N/A'}</td>
+                <td data-showing="masked" data-phone="${phone !== 'N/A' ? phone : ''}">${phoneHtml}</td>
+                <td>${getAccountTypeDisplay(account.account_type)}</td>
+                <td>${formattedDate}</td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="viewAccount(${account.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary me-1" onclick="editAccount(${account.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteAccount(${account.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // Toggle phone number visibility
+    function togglePhoneVisibility(element, phone) {
+        // First, mask all other visible phone numbers
+        const allPhoneContainers = document.querySelectorAll('td[data-showing="full"]');
+        allPhoneContainers.forEach(container => {
+            if (container !== element.closest('td')) {
+                const phoneNumber = container.getAttribute('data-phone');
+                if (phoneNumber) {
+                    const maskedPhone = maskPhoneNumber(phoneNumber);
+                    container.innerHTML = `
+                        ${maskedPhone} 
+                        <button class="btn btn-sm btn-link p-0 ms-2" onclick="togglePhoneVisibility(this, '${phoneNumber}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    `;
+                    container.setAttribute('data-showing', 'masked');
+                }
+            }
+        });
+        
+        // Now toggle the clicked phone number
+        const phoneContainer = element.closest('td');
+        const currentDisplay = phoneContainer.getAttribute('data-showing') || 'masked';
+        
+        if (currentDisplay === 'masked') {
+            // Show full number
+            phoneContainer.innerHTML = `
+                ${phone} 
+                <button class="btn btn-sm btn-link p-0 ms-2" onclick="togglePhoneVisibility(this, '${phone}')">
+                    <i class="fas fa-eye-slash"></i>
+                </button>
+            `;
+            phoneContainer.setAttribute('data-showing', 'full');
+        } else {
+            // Show masked number
+            const maskedPhone = maskPhoneNumber(phone);
+            phoneContainer.innerHTML = `
+                ${maskedPhone} 
+                <button class="btn btn-sm btn-link p-0 ms-2" onclick="togglePhoneVisibility(this, '${phone}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+            `;
+            phoneContainer.setAttribute('data-showing', 'masked');
+        }
+    }
+    
+    // Mask phone number to show only last 4 digits
+    function maskPhoneNumber(phone) {
+        if (!phone) return 'N/A';
+        if (phone.length <= 4) return phone;
+        
+        const lastFour = phone.slice(-4);
+        const maskedPart = 'X'.repeat(phone.length - 4);
+        return maskedPart + lastFour;
+    }
+    
+    // Save new account
+    async function saveNewAccount() {
+        const form = document.getElementById('account-form');
+        const formData = serializeForm(form);
+        
+        const data = await apiRequest('accounts/', 'POST', formData);
+        if (data) {
+            // Close modal and reload accounts
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addAccountModal'));
+            modal.hide();
+            form.reset();
+            loadAccounts();
+            showNotification('Success', 'Account created successfully');
+        }
+    }
+    
+    // Helper function for account type display
+    function getAccountTypeDisplay(type) {
+        switch (type) {
+            case 'customer': return 'Customer';
+            case 'competitor': return 'Competitor';
+            case 'partner': return 'Partner';
+            case 'reseller': return 'Reseller';
+            case 'vendor': return 'Vendor';
+            case 'other': return 'Other';
+            default: return type;
+        }
+    }
+    
+    // View account details
+    function viewAccount(id) {
+        // Redirect to account detail page
+        window.location.href = `/accounts/${id}/`;
+    }
+    
+    // Edit account
+    function editAccount(id) {
+        // Redirect to account edit page
+        window.location.href = `/accounts/${id}/edit/`;
+    }
+    
+    // Delete account
+    function deleteAccount(id) {
+        // Implement delete account functionality
+        if (confirm('Are you sure you want to delete this account?')) {
+            apiRequest(`accounts/${id}/`, 'DELETE')
+                .then(() => {
+                    loadAccounts();
+                    showNotification('Success', 'Account deleted successfully');
+                });
+        }
+    }
+</script>
+{% endblock %}

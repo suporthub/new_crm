@@ -1,0 +1,178 @@
+{% extends 'crm_app/base.html' %}
+{% load static %}
+
+{% block title %}{% if account %}Edit Account{% else %}Create Account{% endif %} | LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{% if account %}Edit Account: {{ account.name }}{% else %}Create New Account{% endif %}</h5>
+                    <div>
+                        <a href="{% if account %}{% url 'account_detail' account.id %}{% else %}{% url 'accounts' %}{% endif %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form id="accountForm" method="post" action="{% if account %}{% url 'account_edit' account.id %}{% else %}{% url 'account_create' %}{% endif %}">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="alert alert-danger">
+                            {% for message in messages %}
+                            <p {% if forloop.last %}class="mb-0"{% endif %}>{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Basic Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="name" class="form-label">Account Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="name" name="name" value="{{ account.name|default:'' }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="account_type" class="form-label">Account Type</label>
+                                        <select class="form-select" id="account_type" name="account_type">
+                                            <option value="">-- Select Type --</option>
+                                            <option value="customer" {% if account.account_type == 'customer' %}selected{% endif %}>Customer</option>
+                                            <option value="partner" {% if account.account_type == 'partner' %}selected{% endif %}>Partner</option>
+                                            <option value="reseller" {% if account.account_type == 'reseller' %}selected{% endif %}>Reseller</option>
+                                            <option value="vendor" {% if account.account_type == 'vendor' %}selected{% endif %}>Vendor</option>
+                                            <option value="other" {% if account.account_type == 'other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Phone</label>
+                                        <input type="text" class="form-control" id="phone" name="phone" value="{{ account.phone|default:'' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ account.email|default:'' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label for="website" class="form-label">Website</label>
+                                        <input type="url" class="form-control" id="website" name="website" value="{{ account.website|default:'' }}" placeholder="https://example.com">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Additional Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="industry" class="form-label">Industry</label>
+                                        <select class="form-select" id="industry" name="industry">
+                                            <option value="">-- Select Industry --</option>
+                                            {% for industry in industries %}
+                                            <option value="{{ industry.id }}" {% if account.industry.id == industry.id %}selected{% endif %}>{{ industry.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="employees" class="form-label">Number of Employees</label>
+                                        <input type="number" class="form-control" id="employees" name="employees" value="{{ account.employees|default:'' }}" min="0">
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="annual_revenue" class="form-label">Annual Revenue</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="text" class="form-control" id="annual_revenue" name="annual_revenue" value="{{ account.annual_revenue|default:'' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="billing_address" class="form-label">Billing Address</label>
+                                        <textarea class="form-control" id="billing_address" name="billing_address" rows="3">{{ account.billing_address|default:'' }}</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="shipping_address" class="form-label">Shipping Address</label>
+                                        <textarea class="form-control" id="shipping_address" name="shipping_address" rows="3">{{ account.shipping_address|default:'' }}</textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="description" name="description" rows="4">{{ account.description|default:'' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <a href="{% if account %}{% url 'account_detail' account.id %}{% else %}{% url 'accounts' %}{% endif %}" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> {% if account %}Update Account{% else %}Create Account{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize select2 for dropdowns if available
+        if ($.fn.select2) {
+            $('#industry').select2({
+                placeholder: "Select an industry",
+                allowClear: true
+            });
+            
+            $('#account_type').select2({
+                placeholder: "Select account type",
+                allowClear: true
+            });
+        }
+        
+        // Form validation
+        $('#accountForm').submit(function(e) {
+            let isValid = true;
+            
+            // Check required fields
+            if ($('#name').val().trim() === '') {
+                $('#name').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#name').removeClass('is-invalid');
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                $('html, body').animate({
+                    scrollTop: $('.is-invalid:first').offset().top - 100
+                }, 200);
+            }
+        });
+    });
+</script>
+{% endblock %}

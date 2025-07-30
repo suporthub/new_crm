@@ -1,0 +1,208 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}{% if contact %}Edit Contact{% else %}Create Contact{% endif %} - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}{% if contact %}Edit Contact{% else %}Create Contact{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{% if contact %}Edit Contact: {{ contact.first_name }} {{ contact.last_name }}{% else %}Create New Contact{% endif %}</h5>
+                <div>
+                    <a href="{% if contact %}{% url 'admin_contact_detail' contact.id %}{% else %}{% url 'admin_contacts' %}{% endif %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Back
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="contactForm" method="post" action="{% if contact %}{% url 'admin_contact_edit' contact.id %}{% else %}{% url 'admin_contact_create' %}{% endif %}">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Basic Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" value="{{ contact.first_name|default:'' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ contact.last_name|default:'' }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ contact.email|default:'' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" value="{{ contact.phone|default:'' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="job_title" class="form-label">Job Title</label>
+                                    <input type="text" class="form-control" id="job_title" name="job_title" value="{{ contact.job_title|default:'' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="account" class="form-label">Associated Account</label>
+                                    <select class="form-select" id="account" name="account">
+                                        <option value="">-- No Account --</option>
+                                        {% for account in accounts %}
+                                        <option value="{{ account.id }}" {% if contact.account.id == account.id %}selected{% endif %}>{{ account.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3">{{ contact.address|default:'' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Additional Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="active" {% if contact.is_active %}selected{% endif %}>Active</option>
+                                        <option value="inactive" {% if not contact.is_active %}selected{% endif %}>Inactive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="lead_source" class="form-label">Lead Source</label>
+                                    <select class="form-select" id="lead_source" name="lead_source">
+                                        <option value="">-- Select Source --</option>
+                                        <option value="website_demo" {% if contact.lead_source == 'website_demo' or contact.lead_source == 'website' %}selected{% endif %}>Website - {Demo}</option>
+                                        <option value="website_live" {% if contact.lead_source == 'website_live' %}selected{% endif %}>Website - {live}</option>
+                                        <option value="referral" {% if contact.lead_source == 'referral' %}selected{% endif %}>Referral</option>
+                                        <option value="social_media" {% if contact.lead_source == 'social_media' %}selected{% endif %}>Social Media</option>
+                                        <option value="email" {% if contact.lead_source == 'email' %}selected{% endif %}>Email Campaign</option>
+                                        <option value="event" {% if contact.lead_source == 'event' %}selected{% endif %}>Event</option>
+                                        <option value="other" {% if contact.lead_source == 'other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assignment Information Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Assignment Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="assigned_to" class="form-label">Assigned To</label>
+                                    <select class="form-select" id="assigned_to" name="assigned_to">
+                                        <option value="">-- Not Assigned --</option>
+                                        {% for user in users %}
+                                        <option value="{{ user.id }}" {% if contact.assigned_to.id == user.id %}selected{% endif %}>{{ user.get_full_name|default:user.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Notes</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="notes" class="form-label">Add Note (Optional)</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                                    <div class="form-text">Add any additional information about this contact.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <a href="{% if contact %}{% url 'admin_contact_detail' contact.id %}{% else %}{% url 'admin_contacts' %}{% endif %}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> {% if contact %}Update Contact{% else %}Create Contact{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize any select2 dropdowns if needed
+        if ($.fn.select2) {
+            $('#account').select2({
+                placeholder: "Select an account",
+                allowClear: true
+            });
+            
+            $('#assigned_to').select2({
+                placeholder: "Select a user",
+                allowClear: true
+            });
+        }
+        
+        // Form validation
+        $('#contactForm').submit(function(e) {
+            let isValid = true;
+            
+            // Check required fields
+            if ($('#first_name').val().trim() === '') {
+                $('#first_name').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#first_name').removeClass('is-invalid');
+            }
+            
+            if ($('#last_name').val().trim() === '') {
+                $('#last_name').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#last_name').removeClass('is-invalid');
+            }
+            
+            if ($('#email').val().trim() === '') {
+                $('#email').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#email').removeClass('is-invalid');
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                $('html, body').animate({
+                    scrollTop: $('.is-invalid:first').offset().top - 100
+                }, 200);
+            }
+        });
+    });
+</script>
+{% endblock %}

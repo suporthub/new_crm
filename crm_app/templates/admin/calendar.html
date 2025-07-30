@@ -1,0 +1,228 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Calendar - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}Calendar{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+<style>
+    .fc-event {
+        cursor: pointer;
+    }
+    .fc-event-title {
+        font-weight: 500;
+    }
+    .fc-daygrid-event-dot {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Pass users data for JS -->
+<div id="usersData" data-users='{{ users_json|safe }}'></div>
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Tasks Calendar</h5>
+            <div class="d-flex align-items-center gap-2">
+                <select id="userFilter" class="form-select form-select-sm">
+                    <option value="">All Users</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script>
+    let calendar;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function apiRequest(endpoint) {
+        const resp = await fetch(`/api/${endpoint}`, { headers: { 'X-CSRFToken': getCookie('csrftoken') } });
+        if (!resp.ok) throw new Error(await resp.text());
+        return resp.json();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: fetchEvents,
+            eventClick: function(info) {
+                const eventId = info.event.id;
+                let taskId = null;
+                if (eventId && eventId.startsWith('task_')) {
+                    taskId = eventId.replace('task_', '');
+                }
+                if (taskId) {
+                    viewTask(taskId);
+                }
+            }
+        });
+        calendar.render();
+
+        document.getElementById('userFilter').addEventListener('change', () => {
+            calendar.refetchEvents();
+        });
+    });
+
+    function getTaskStatusColor(status) {
+        switch(status) {
+            case 'not_started': return '#6c757d';
+            case 'in_progress': return '#0dcaf0';
+            case 'completed': return '#198754';
+            case 'deferred': return '#ffc107';
+            default: return '#dc3545';
+        }
+    }
+
+    async function fetchEvents(info, successCallback, failureCallback) {
+        try {
+            const start = info.startStr.split('T')[0];
+            const end = info.endStr.split('T')[0];
+            const tasksData = await apiRequest(`tasks/?due_date_start=${start}&due_date_end=${end}`);
+            const selectedUser = document.getElementById('userFilter').value;
+            let tasks = (tasksData.results || tasksData);
+            if (selectedUser) {
+                tasks = tasks.filter(t => String(t.assigned_to) === selectedUser || String(t.created_by) === selectedUser);
+            }
+            const events = tasks.map(t => ({
+                id: `task_${t.id}`,
+                title: t.subject,
+                start: t.due_date,
+                allDay: true,
+                backgroundColor: getTaskStatusColor(t.status),
+                borderColor: getTaskStatusColor(t.status),
+                extendedProps: { status: t.status }
+            }));
+            successCallback(events);
+        } catch(e) {
+            console.error(e);
+            failureCallback(e);
+        }
+    }
+
+    // View task details in modal
+    function viewTask(id) {
+        apiRequest(`tasks/${id}/`)
+            .then(task => {
+                if (!task) return;
+                const modalHtml = `
+                    <div class="modal fade" id="viewTaskModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Task Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-4"><strong>Subject:</strong></div>
+                                        <div class="col-md-8">${task.subject}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4"><strong>Due Date:</strong></div>
+                                        <div class="col-md-8">${formatDateTime(task.due_date)}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4"><strong>Status:</strong></div>
+                                        <div class="col-md-8"><span class="badge" style="background-color:${getTaskStatusColor(task.status)}">${getTaskStatusDisplay(task.status)}</span></div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4"><strong>Priority:</strong></div>
+                                        <div class="col-md-8"><span class="badge bg-${getTaskPriorityColor(task.priority)}">${getTaskPriorityDisplay(task.priority)}</span></div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4"><strong>Assigned To:</strong></div>
+                                        <div class="col-md-8">${task.assigned_to_name || 'N/A'}</div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4"><strong>Description:</strong></div>
+                                        <div class="col-md-8">${task.description || 'No description'}</div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <a href="/admin/tasks/" class="btn btn-primary">Go to Tasks</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                const existing = document.getElementById('viewTaskModal');
+                if (existing) existing.remove();
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                const modal = new bootstrap.Modal(document.getElementById('viewTaskModal'));
+                modal.show();
+            })
+            .catch(err => console.error('Error fetching task:', err));
+    }
+
+    // Helper functions
+    function formatDateTime(dateTimeStr) {
+        const date = new Date(dateTimeStr);
+        if (isNaN(date.getTime())) return dateTimeStr || 'N/A';
+        return date.toLocaleString();
+    }
+
+    function getTaskPriorityColor(priority) {
+        switch(priority) {
+            case 'high': return 'danger';
+            case 'medium': return 'warning';
+            case 'low': return 'info';
+            default: return 'secondary';
+        }
+    }
+
+    function getTaskStatusDisplay(status) {
+        switch(status) {
+            case 'not_started': return 'Not Started';
+            case 'in_progress': return 'In Progress';
+            case 'completed': return 'Completed';
+            case 'deferred': return 'Deferred';
+            case 'waiting': return 'Waiting';
+            default: return status;
+        }
+    }
+
+    function getTaskPriorityDisplay(priority) {
+        switch(priority) {
+            case 'high': return 'High';
+            case 'medium': return 'Medium';
+            case 'low': return 'Low';
+            default: return priority;
+        }
+    }
+</script>
+{% endblock %}

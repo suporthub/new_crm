@@ -1,0 +1,342 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Edit Lead - LiveFxHub CRM Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="h3 mb-0 text-gray-800">Edit Lead</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_leads' %}">Leads</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit Lead</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Edit Lead Details</h6>
+                    <a href="{% url 'admin_leads' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Leads
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'admin_lead_edit' lead.id %}">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="alert alert-info">
+                            {% for message in messages %}
+                                {{ message }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Basic Information Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="m-0 font-weight-bold text-primary">Basic Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-2 mb-3">
+                                        <label for="salutation" class="form-label">Salutation</label>
+                                        <select class="form-select" id="salutation" name="salutation">
+                                            <option value="" {% if not lead.salutation %}selected{% endif %}>--None--</option>
+                                            <option value="Mr." {% if lead.salutation == 'Mr.' %}selected{% endif %}>Mr.</option>
+                                            <option value="Ms." {% if lead.salutation == 'Ms.' %}selected{% endif %}>Ms.</option>
+                                            <option value="Mrs." {% if lead.salutation == 'Mrs.' %}selected{% endif %}>Mrs.</option>
+                                            <option value="Dr." {% if lead.salutation == 'Dr.' %}selected{% endif %}>Dr.</option>
+                                            <option value="Prof." {% if lead.salutation == 'Prof.' %}selected{% endif %}>Prof.</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5 mb-3">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ lead.first_name }}" required>
+                                    </div>
+                                    <div class="col-md-5 mb-3">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ lead.last_name }}" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ lead.email|default:'' }}">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="phone" class="form-label">Phone</label>
+                                        <input type="text" class="form-control" id="phone" name="phone" value="{{ lead.phone|default:'' }}">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="mobile" class="form-label">Mobile</label>
+                                        <input type="text" class="form-control" id="mobile" name="mobile" value="{{ lead.mobile|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="company" class="form-label">Company</label>
+                                        <input type="text" class="form-control" id="company" name="company" value="{{ lead.company|default:'' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="job_title" class="form-label">Job Title</label>
+                                        <input type="text" class="form-control" id="job_title" name="job_title" value="{{ lead.title|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="website" class="form-label">Website</label>
+                                        <input type="url" class="form-control" id="website" name="website" value="{{ lead.website|default:'' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="address" class="form-label">Address</label>
+                                        <textarea class="form-control" id="address" name="address" rows="2">{{ lead.address|default:'' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status & Classification Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="m-0 font-weight-bold text-primary">Status & Classification</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="lead_status" class="form-label">Lead Status</label>
+                                        <select class="form-select" id="lead_status" name="lead_status">
+                                            <option value="new" {% if lead.lead_status == 'new' %}selected{% endif %}>New</option>
+                                            <option value="contacted" {% if lead.lead_status == 'contacted' %}selected{% endif %}>Contacted</option>
+                                            <option value="qualified" {% if lead.lead_status == 'qualified' %}selected{% endif %}>Qualified</option>
+                                            <option value="unqualified" {% if lead.lead_status == 'unqualified' %}selected{% endif %}>Unqualified</option>
+                                            <!-- <option value="converted" {% if lead.lead_status == 'converted' %}selected{% endif %}>Converted</option> -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="lead_source" class="form-label">Lead Source</label>
+                                        <select class="form-select" id="lead_source" name="lead_source">
+                                            <option value="website_demo" {% if lead.lead_source == 'website_demo' or lead.lead_source == 'website' %}selected{% endif %}>Website - {Demo}</option>
+                                            <option value="website_live" {% if lead.lead_source == 'website_live' %}selected{% endif %}>Website - {live}</option>
+                                            <option value="phone" {% if lead.lead_source == 'phone' %}selected{% endif %}>Phone Inquiry</option>
+                                            <option value="referral" {% if lead.lead_source == 'referral' %}selected{% endif %}>Referral</option>
+                                            <option value="email" {% if lead.lead_source == 'email' %}selected{% endif %}>Email</option>
+                                            <option value="social_media" {% if lead.lead_source == 'social_media' %}selected{% endif %}>Social Media</option>
+                                            <option value="trade_show" {% if lead.lead_source == 'trade_show' %}selected{% endif %}>Trade Show</option>
+                                            <option value="email_campaign" {% if lead.lead_source == 'email_campaign' %}selected{% endif %}>Email Campaign</option>
+                                            <option value="cold_call" {% if lead.lead_source == 'cold_call' %}selected{% endif %}>Cold Call</option>
+                                            <option value="event" {% if lead.lead_source == 'event' %}selected{% endif %}>Event</option>
+                                            <option value="other" {% if lead.lead_source == 'other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="industry" class="form-label">Industry</label>
+                                        <select class="form-select" id="industry" name="industry">
+                                            <option value="">--None--</option>
+                                            {% for industry in industries %}
+                                                <option value="{{ industry.id }}" {% if lead.industry and lead.industry.id == industry.id %}selected{% endif %}>{{ industry.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="annual_revenue" class="form-label">Annual Revenue</label>
+                                        <input type="number" class="form-control" id="annual_revenue" name="annual_revenue" value="{{ lead.annual_revenue|default:'' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="employees" class="form-label">Number of Employees</label>
+                                        <input type="number" class="form-control" id="employees" name="employees" value="{{ lead.employees|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Assignment & Notes Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="m-0 font-weight-bold text-primary">Assignment & Notes</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="assigned_to" class="form-label">Assigned To</label>
+                                        <select class="form-select" id="assigned_to" name="assigned_to">
+                                            <option value="">-- Unassigned --</option>
+                                            {% for user in users %}
+                                                {% if request.user.profile.role != 'manager' or user.profile.manager_username == request.user.username %}
+                                                    <option value="{{ user.id }}" {% if lead.assigned_to and lead.assigned_to.id == user.id %}selected{% endif %}>
+                                                        {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+                                                    </option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="description" name="description" rows="4">{{ lead.description|default:'' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                            <a href="{% url 'admin_leads' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lead edit form submission
+        const leadForm = document.querySelector('form[action*="admin_lead_edit"]');
+        if (leadForm) {
+            leadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Basic validation
+                const firstName = document.getElementById('first_name').value.trim();
+                const lastName = document.getElementById('last_name').value.trim();
+                
+                if (!firstName || !lastName) {
+                    showMessage('error', 'First name and last name are required.');
+                    return false;
+                }
+                
+                // Email validation if provided
+                const email = document.getElementById('email').value.trim();
+                if (email && !isValidEmail(email)) {
+                    showMessage('error', 'Please enter a valid email address.');
+                    return false;
+                }
+                
+                const formData = new FormData(this);
+                const leadId = '{{ lead.id }}';
+                
+                // Convert formData to JSON object
+                const leadData = {
+                    salutation: formData.get('salutation') || null,
+                    first_name: formData.get('first_name'),
+                    last_name: formData.get('last_name'),
+                    email: formData.get('email') || null,
+                    phone: formData.get('phone') || null,
+                    mobile: formData.get('mobile') || null,
+                    company: formData.get('company') || null,
+                    title: formData.get('job_title') || null,
+                    website: formData.get('website') || null,
+                    address: formData.get('address') || null,
+                    lead_source: formData.get('lead_source'),
+                    lead_status: formData.get('lead_status'),
+                    description: formData.get('description') || null,  // Updated to use correct field name
+                    assigned_to: formData.get('assigned_to') ? parseInt(formData.get('assigned_to')) : null,
+                    industry: formData.get('industry') ? parseInt(formData.get('industry')) : null,
+                    annual_revenue: formData.get('annual_revenue') ? parseFloat(formData.get('annual_revenue')) : null,
+                    employees: formData.get('employees') ? parseInt(formData.get('employees')) : null
+                };
+                
+                // Show loading indicator
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                submitBtn.disabled = true;
+                
+                // Make authenticated API call to update lead
+                fetch(`/api/leads/${leadId}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    },
+                    body: JSON.stringify(leadData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(JSON.stringify(data));
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Show success message
+                    showMessage('success', 'Lead updated successfully!');
+                    
+                    // Redirect to leads list after a short delay
+                    setTimeout(() => {
+                        window.location.href = "{% url 'admin_leads' %}";
+                    }, 1500);
+                })
+                .catch(error => {
+                    try {
+                        const errorData = JSON.parse(error.message);
+                        let errorMessage = 'Error updating lead: ';
+                        
+                        // Format error messages from the API response
+                        Object.keys(errorData).forEach(key => {
+                            errorMessage += `${key}: ${errorData[key]}\n`;
+                        });
+                        
+                        showMessage('error', errorMessage);
+                    } catch (e) {
+                        showMessage('error', 'Error updating lead: ' + error.message);
+                    }
+                })
+                .finally(() => {
+                    // Restore button state
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+        
+        // Email validation helper function
+        function isValidEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+        
+        // Function to show messages
+        function showMessage(type, message) {
+            // Remove any existing messages
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            // Create new message element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = type === 'success' 
+                ? 'alert alert-success' 
+                : 'alert alert-danger';
+            alertDiv.innerHTML = message;
+            
+            // Insert at the top of the form
+            const form = document.querySelector('form');
+            form.insertBefore(alertDiv, form.firstChild);
+            
+            // Scroll to the message
+            alertDiv.scrollIntoView({ behavior: 'smooth' });
+            
+            // Auto-dismiss success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        }
+    });
+</script>
+{% endblock %}

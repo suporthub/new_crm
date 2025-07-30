@@ -1,0 +1,573 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Accounts Management - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}Accounts Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Account Overview</h5>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                        <i class="fas fa-plus me-2"></i> Add New Account
+                    </button>
+                    <button class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#importAccountsModal">
+                        <i class="fas fa-file-import me-2"></i> Import Accounts
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Total Accounts</h6>
+                                <h2 class="mb-0">{{ total_accounts }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">New Accounts (30d)</h6>
+                                <h2 class="mb-0">{{ new_accounts }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Total Value</h6>
+                                <h2 class="mb-0">${{ total_value|floatformat:2 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted mb-1">Avg. Deal Size</h6>
+                                <h2 class="mb-0">${{ avg_deal_size|default:"0"|floatformat:2 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="accountSearchInput" placeholder="Search accounts...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="industryFilter">
+                            <option value="">Industry (All)</option>
+                            {% for industry in industries %}
+                            <option value="{{ industry.id }}">{{ industry.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="sizeFilter">
+                            <option value="">Size (All)</option>
+                            <option value="1-10">1-10 employees</option>
+                            <option value="11-50">11-50 employees</option>
+                            <option value="51-200">51-200 employees</option>
+                            <option value="201-500">201-500 employees</option>
+                            <option value="501-1000">501-1000 employees</option>
+                            <option value="1000+">1000+ employees</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" id="filterBtn">
+                            <i class="fas fa-filter me-2"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover admin-table" id="accountsTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAllAccounts">
+                                    </div>
+                                </th>
+                                <th>Account</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Location</th>
+                                <th>Created At</th>
+                                <th>Converted By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account_data in accounts_with_counts %}
+                            {% with account=account_data.account %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input account-checkbox" type="checkbox" value="{{ account.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="account-icon rounded-circle me-2 d-flex align-items-center justify-content-center bg-light" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-building text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ account.name }}</div>
+                                            <div class="small text-muted">{{ account.website|default:"" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ account.phone|default:"--" }}</td>
+                                <td>{{ account.email|default:"--" }}</td>
+                                <td>{{ account.billing_address|default:"--" }}</td>
+                                <td>{{ account.created_at|date:"M d, Y" }}</td>
+                                <td>{{ account.converted_by.username|default:"--" }}</td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="accountActionDropdown{{ account.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="accountActionDropdown{{ account.id }}">
+                                            <li><a class="dropdown-item" href="{% url 'admin_account_detail' account.id %}"><i class="fas fa-eye me-2"></i> View</a></li>
+                                            <li><a class="dropdown-item" href="{% url 'admin_account_edit' account.id %}"><i class="fas fa-edit me-2"></i> Edit</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-primary" href="#" onclick="addContact('{{ account.id }}')"><i class="fas fa-user-plus me-2"></i> Add Contact</a></li>
+                                            <li><a class="dropdown-item text-success" href="#" onclick="addDeal('{{ account.id }}')"><i class="fas fa-handshake me-2"></i> Add Deal</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteAccount('{{ account.id }}')"><i class="fas fa-trash-alt me-2"></i> Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Bulk Actions
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="bulkActionsDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('change-industry')"><i class="fas fa-industry me-2"></i> Change Industry</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="bulkAction('assign-territory')"><i class="fas fa-map-marker-alt me-2"></i> Assign Territory</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('delete')"><i class="fas fa-trash-alt me-2"></i> Delete Selected</a></li>
+                        </ul>
+                    </div>
+                    
+                    <a href="#" class="btn btn-outline-primary ms-2" id="exportAccountsBtn">
+                        <i class="fas fa-file-export me-2"></i> Export
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">Accounts by Industry</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="accountsByIndustryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <h5 class="mb-0">Account Growth</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="accountGrowthChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Account Modal -->
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-labelledby="addAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAccountModalLabel">Add New Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAccountForm" method="post" action="{% url 'admin_account_create' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="name" class="form-label">Account Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="industry" class="form-label">Industry</label>
+                            <select class="form-select" id="industry" name="industry">
+                                <option value="">-- Select Industry --</option>
+                                {% for industry in industries %}
+                                <option value="{{ industry.id }}">{{ industry.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="annual_revenue" class="form-label">Annual Revenue</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="annual_revenue" name="annual_revenue" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="website" class="form-label">Website</label>
+                            <input type="url" class="form-control" id="website" name="website" placeholder="https://example.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="employees" class="form-label">Number of Employees</label>
+                            <input type="number" class="form-control" id="employees" name="employees" min="1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="account_type" class="form-label">Account Type</label>
+                            <select class="form-select" id="account_type" name="account_type">
+                                <option value="customer">Customer</option>
+                                <option value="prospect">Prospect</option>
+                                <option value="partner">Partner</option>
+                                <option value="vendor">Vendor</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addAccountForm" class="btn btn-primary">Save Account</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Accounts Modal -->
+<div class="modal fade" id="importAccountsModal" tabindex="-1" aria-labelledby="importAccountsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importAccountsModalLabel">Import Accounts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importAccountsForm" method="post" action="{% url 'admin_account_import' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="import_file" class="form-label">CSV File</label>
+                        <input type="file" class="form-control" id="import_file" name="import_file" accept=".csv" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="header_row" name="header_row" checked>
+                        <label class="form-check-label" for="header_row">
+                            First row contains headers
+                        </label>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">CSV Format</h6>
+                        <p class="mb-0">Your CSV file should have the following columns:</p>
+                        <ul class="mb-0">
+                            <li>name (required)</li>
+                            <li>industry_id</li>
+                            <li>website</li>
+                            <li>phone</li>
+                            <li>annual_revenue</li>
+                            <li>employees</li>
+                            <li>address</li>
+                            <li>description</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <a href="{% url 'admin_download_account_template' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-2"></i> Download Template
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="importAccountsForm" class="btn btn-primary">Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable
+        const accountsTable = $('#accountsTable').DataTable({
+            responsive: true,
+            dom: '<"top"lf>rt<"bottom"ip><"clear">',
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search accounts..."
+            },
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            columnDefs: [
+                { orderable: false, targets: [0, 6] } // Disable sorting on checkbox and actions columns
+            ]
+        });
+        
+        // Accounts by Industry Chart
+        const accountsByIndustryCtx = document.getElementById('accountsByIndustryChart').getContext('2d');
+        const accountsByIndustryChart = new Chart(accountsByIndustryCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail', 'Education', 'Other'],
+                datasets: [{
+                    data: [25, 18, 15, 12, 10, 8, 12],
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.7)',
+                        'rgba(46, 204, 113, 0.7)',
+                        'rgba(155, 89, 182, 0.7)',
+                        'rgba(52, 73, 94, 0.7)',
+                        'rgba(241, 196, 15, 0.7)',
+                        'rgba(230, 126, 34, 0.7)',
+                        'rgba(149, 165, 166, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 152, 219, 1)',
+                        'rgba(46, 204, 113, 1)',
+                        'rgba(155, 89, 182, 1)',
+                        'rgba(52, 73, 94, 1)',
+                        'rgba(241, 196, 15, 1)',
+                        'rgba(230, 126, 34, 1)',
+                        'rgba(149, 165, 166, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+        
+        // Account Growth Chart
+        const accountGrowthCtx = document.getElementById('accountGrowthChart').getContext('2d');
+        const accountGrowthChart = new Chart(accountGrowthCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'New Accounts',
+                    data: [5, 8, 12, 7, 15, 10, 8, 14, 18, 12, 9, 11],
+                    borderColor: 'rgba(46, 204, 113, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Select All Accounts Checkbox
+        document.getElementById('selectAllAccounts').addEventListener('change', function() {
+            const isChecked = this.checked;
+            document.querySelectorAll('.account-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        });
+        
+        // Filter Button
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            const searchValue = document.getElementById('accountSearchInput').value.toLowerCase();
+            const industryFilter = document.getElementById('industryFilter').value;
+            const sizeFilter = document.getElementById('sizeFilter').value.toLowerCase();
+            
+            // Reset DataTable search and draw with new search value
+            accountsTable.search(searchValue).draw();
+            
+            // Apply custom filtering for industry and size
+            // Note: In a real implementation, you would likely use server-side filtering
+            // or DataTables API for custom column filtering
+            showNotification('Info', 'Filters applied', 'info');
+        });
+        
+        // Export Accounts Button
+        document.getElementById('exportAccountsBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // In a real implementation, this would trigger an API call to export the accounts
+            showNotification('Success', 'Accounts exported successfully!', 'success');
+            
+            // Simulate file download
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.download = 'accounts_export.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }, 1000);
+        });
+    });
+    
+    // Account Actions
+    function addContact(accountId) {
+        // Redirect to add contact page with account pre-selected
+        window.location.href = "{% url 'admin_contact_create' %}?account=" + accountId;
+    }
+    
+    function addDeal(accountId) {
+        // Redirect to add deal page with account pre-selected
+        window.location.href = "{% url 'admin_deal_create' %}?account=" + accountId;
+    }
+    
+    function deleteAccount(accountId) {
+        if (confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
+            // In a real implementation, this would trigger an API call to delete the account
+            showNotification('Success', 'Account deleted successfully!', 'success');
+        }
+    }
+    
+    // Bulk Actions
+    function bulkAction(action) {
+        const selectedAccounts = [];
+        document.querySelectorAll('.account-checkbox:checked').forEach(checkbox => {
+            selectedAccounts.push(checkbox.value);
+        });
+        
+        if (selectedAccounts.length === 0) {
+            showNotification('Warning', 'No accounts selected', 'warning');
+            return;
+        }
+        
+        switch (action) {
+            case 'change-industry':
+                // Show industry change modal or dropdown
+                showNotification('Info', `Changing industry for ${selectedAccounts.length} accounts`, 'info');
+                break;
+            case 'assign-territory':
+                // Show territory assignment modal or dropdown
+                showNotification('Info', `Assigning territory for ${selectedAccounts.length} accounts`, 'info');
+                break;
+            case 'delete':
+                if (confirm(`Are you sure you want to delete ${selectedAccounts.length} accounts? This action cannot be undone.`)) {
+                    showNotification('Success', `${selectedAccounts.length} accounts deleted successfully!`, 'success');
+                }
+                break;
+        }
+    }
+    
+    // Notification function (same as in other templates)
+    function showNotification(title, message, type = 'success') {
+        const icon = type === 'success' ? 'check-circle' :
+                    type === 'warning' ? 'exclamation-triangle' :
+                    type === 'error' ? 'times-circle' : 'info-circle';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${icon} me-2"></i>
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '5';
+            document.body.appendChild(container);
+            container.appendChild(toast);
+        } else {
+            toastContainer.appendChild(toast);
+        }
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            animation: true,
+            autohide: true,
+            delay: 5000
+        });
+        
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

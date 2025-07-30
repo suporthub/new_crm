@@ -1,0 +1,304 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Dashboard - LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card primary h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h5 class="card-title">Leads</h5>
+                            <h2 class="mb-0" id="leads-count">0</h2>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-user-plus stat-icon text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'leads-page' %}" class="text-decoration-none">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card success h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h5 class="card-title">Contacts</h5>
+                            <h2 class="mb-0" id="contacts-count">0</h2>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-address-book stat-icon text-success"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'contacts-page' %}" class="text-decoration-none">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card warning h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h5 class="card-title">Accounts</h5>
+                            <h2 class="mb-0" id="accounts-count">0</h2>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-building stat-icon text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'accounts-page' %}" class="text-decoration-none">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card danger h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h5 class="card-title">Deals</h5>
+                            <h2 class="mb-0" id="deals-count">0</h2>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="fas fa-handshake stat-icon text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'deals-page' %}" class="text-decoration-none">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Upcoming Tasks -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">My Upcoming Tasks</h5>
+                        <small class="text-muted">Pending and upcoming tasks assigned to you</small>
+                    </div>
+                    <a href="{% url 'tasks-page' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Due Date</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="upcoming-tasks-table">
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading tasks...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Leads -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Leads</h5>
+                    <a href="{% url 'leads-page' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Company</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-leads-table">
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading leads...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Recent Deals -->
+        <div class="col-lg-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Deals</h5>
+                    <a href="{% url 'deals-page' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Account</th>
+                                    <th>Amount</th>
+                                    <th>Stage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-deals-table">
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading deals...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Populate recent leads table - limit to 5 leads
+    function populateRecentLeads(leads) {
+        const tableBody = document.getElementById('recent-leads-table');
+        if (!leads || leads.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No leads found</td></tr>';
+            return;
+        }
+        
+        // Limit to 5 recent leads
+        const recentLeads = leads.slice(0, 5);
+        
+        tableBody.innerHTML = '';
+        recentLeads.forEach(lead => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${lead.first_name} ${lead.last_name}</td>
+                <td>${lead.company || 'N/A'}</td>
+                <td>${lead.email || 'N/A'}</td>
+                <td><span class="badge bg-${getLeadStatusColor(lead.lead_status)}">${lead.lead_status}</span></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // Populate recent deals table
+    function populateRecentDeals(deals) {
+        const tableBody = document.getElementById('recent-deals-table');
+        if (!deals || deals.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No deals found</td></tr>';
+            return;
+        }
+        
+        tableBody.innerHTML = '';
+        deals.forEach(deal => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${deal.name}</td>
+                <td>${deal.account_name}</td>
+                <td>$${deal.amount}</td>
+                <td><span class="badge bg-${getDealStageColor(deal.stage)}">${deal.stage_display}</span></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // Populate upcoming tasks table - only pending and upcoming tasks
+    function populateUpcomingTasks(tasks) {
+        const tableBody = document.getElementById('upcoming-tasks-table');
+        if (!tasks || tasks.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No upcoming tasks</td></tr>';
+            return;
+        }
+        
+        // Show all tasks assigned to the user, not just specific statuses
+        tableBody.innerHTML = '';
+        tasks.forEach(task => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${task.subject}</td>
+                <td>${formatDateTime(task.due_date)}</td>
+                <td><span class="badge bg-${getTaskPriorityColor(task.priority)}">${task.priority_display}</span></td>
+                <td><span class="badge bg-${getTaskStatusColor(task.status)}">${task.status_display}</span></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // Helper functions for status colors
+    function getLeadStatusColor(status) {
+        switch (status) {
+            case 'new': return 'primary';
+            case 'contacted': return 'info';
+            case 'qualified': return 'success';
+            case 'unqualified': return 'danger';
+            case 'converted': return 'warning';
+            default: return 'secondary';
+        }
+    }
+    
+    function getDealStageColor(stage) {
+        switch (stage) {
+            case 'qualification': return 'primary';
+            case 'needs_analysis': return 'info';
+            case 'value_proposition': return 'secondary';
+            case 'id_decision_makers': return 'dark';
+            case 'proposal': return 'warning';
+            case 'negotiation': return 'light text-dark';
+            case 'closed_won': return 'success';
+            case 'closed_lost': return 'danger';
+            default: return 'secondary';
+        }
+    }
+    
+    function getTaskPriorityColor(priority) {
+        switch (priority) {
+            case 'high': return 'danger';
+            case 'medium': return 'warning';
+            case 'low': return 'info';
+            default: return 'secondary';
+        }
+    }
+    
+    function getTaskStatusColor(status) {
+        switch (status) {
+            case 'not_started': return 'secondary';
+            case 'in_progress': return 'primary';
+            case 'completed': return 'success';
+            case 'deferred': return 'warning';
+            case 'waiting': return 'info';
+            default: return 'secondary';
+        }
+    }
+    
+    // Load dashboard data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+    });
+</script>
+{% endblock %}

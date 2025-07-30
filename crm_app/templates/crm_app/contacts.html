@@ -1,0 +1,573 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Contacts - LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Contacts</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">All Contacts</h5>
+                <div class="d-flex">
+                    <div class="input-group me-3" style="width: 300px;">
+                        <input type="text" id="contact-search" class="form-control" placeholder="Search contacts..." aria-label="Search contacts">
+                        <button class="btn btn-outline-secondary" type="button" id="search-clear-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-outline-primary me-2" type="button" id="toggle-advanced-search">
+                        <i class="fas fa-filter"></i> Advanced
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addContactModal">
+                        <i class="fas fa-plus"></i> Add Contact
+                    </button>
+                </div>
+            </div>
+            <div id="advanced-search" class="mt-3 p-3 border rounded bg-light" style="display: none;">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <label for="date-from" class="form-label">Updated From:</label>
+                        <input type="date" id="date-from" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label for="date-to" class="form-label">Updated To:</label>
+                        <input type="date" id="date-to" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4 mb-2 d-flex align-items-end">
+                        <button class="btn btn-sm btn-primary me-2" type="button" id="apply-filters-btn">Apply Filters</button>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="reset-filters-btn">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="contacts-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Account ID</th>
+                            <th>Updated At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Contacts will be loaded here via JavaScript -->
+                        <tr>
+                            <td colspan="6" class="text-center">Loading contacts...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div class="modal fade" id="addContactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contact-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="account" class="form-label">Account</label>
+                        <select class="form-select" id="account" name="account" required>
+                            <option value="">Select Account</option>
+                            <!-- Accounts will be loaded here via JavaScript -->
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone</label>
+                            <input type="text" class="form-control" id="phone" name="phone">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="job_title" class="form-label">Job Title</label>
+                            <input type="text" class="form-control" id="job_title" name="job_title">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="department" name="department">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-contact-btn">Save Contact</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Store all contacts for filtering
+    let allContacts = [];
+    // Store date filters
+    let dateFilters = {
+        from: null,
+        to: null
+    };
+    
+    // Helper function to get account ID from different object structures
+    function getAccountId(contact) {
+        if (contact.account_id) {
+            return contact.account_id;
+        } else if (typeof contact.account === 'object' && contact.account && contact.account.id) {
+            return contact.account.id;
+        } else if (typeof contact.account === 'number') {
+            return contact.account;
+        } else if (typeof contact.account === 'string' && !isNaN(parseInt(contact.account))) {
+            return contact.account;
+        } else {
+            return 'N/A';
+        }
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add contact form submission
+        document.getElementById('save-contact-btn').addEventListener('click', saveNewContact);
+        
+        // Initialize form validation
+        const contactForm = document.getElementById('contact-form');
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveNewContact();
+        });
+        
+        // Add search functionality with debounce (300ms delay)
+        const searchInput = document.getElementById('contact-search');
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchContacts();
+            }, 300);
+        });
+        
+        // Add clear search button functionality
+        document.getElementById('search-clear-btn').addEventListener('click', function() {
+            searchInput.value = '';
+            searchContacts();
+        });
+        
+        // Toggle advanced search section
+        document.getElementById('toggle-advanced-search').addEventListener('click', function() {
+            const advancedSearch = document.getElementById('advanced-search');
+            if (advancedSearch.style.display === 'none') {
+                advancedSearch.style.display = 'block';
+            } else {
+                advancedSearch.style.display = 'none';
+            }
+        });
+        
+        // Apply filters button
+        document.getElementById('apply-filters-btn').addEventListener('click', function() {
+            const fromDate = document.getElementById('date-from').value;
+            const toDate = document.getElementById('date-to').value;
+            
+            dateFilters.from = fromDate ? new Date(fromDate) : null;
+            dateFilters.to = toDate ? new Date(toDate) : null;
+            
+            searchContacts();
+        });
+        
+        // Reset filters button
+        document.getElementById('reset-filters-btn').addEventListener('click', function() {
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+            dateFilters.from = null;
+            dateFilters.to = null;
+            searchContacts();
+        });
+        
+        loadContacts();
+        loadAccounts();
+    });
+    
+    // Load contacts on page load
+    async function loadContacts() {
+        try {
+            // Show loading state
+            document.querySelector('#contacts-table tbody').innerHTML = 
+                '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading contacts...</td></tr>';
+            
+            // First get the current user's profile to get their manager_username
+            const userProfile = await apiRequest('profile/');
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            
+            if (userProfile && userProfile.manager_username) {
+                // Filter contacts by the user's manager_username
+                const data = await apiRequest(`contacts/?manager_username=${userProfile.manager_username}`);
+                
+                if (data && data.results) {
+                    // First check if any contacts have matching manager_username
+                    const managerContacts = data.results.filter(contact => 
+                        contact.manager_username === userProfile.manager_username
+                    );
+                    
+                    if (managerContacts.length > 0) {
+                        // Then filter those contacts to show only assigned to current user or unassigned
+                        const filteredContacts = managerContacts.filter(contact => 
+                            !contact.assigned_to || // unassigned contacts
+                            contact.assigned_to === currentUser.id || 
+                            (contact.assigned_to && contact.assigned_to.id === currentUser.id)
+                        );
+                        // Store contacts for search and display them
+                        allContacts = filteredContacts;
+                        displayContacts(filteredContacts);
+                    } else {
+                        // No contacts with matching manager_username
+                        allContacts = [];
+                        document.querySelector('#contacts-table tbody').innerHTML = 
+                            '<tr><td colspan="6" class="text-center">No contacts found with matching manager</td></tr>';
+                    }
+                } else if (data && Array.isArray(data)) {
+                    // Handle case where API returns an array directly
+                    // First check if any contacts have matching manager_username
+                    const managerContacts = data.filter(contact => 
+                        contact.manager_username === userProfile.manager_username
+                    );
+                    
+                    if (managerContacts.length > 0) {
+                        // Then filter those contacts to show only assigned to current user or unassigned
+                        const filteredContacts = managerContacts.filter(contact => 
+                            !contact.assigned_to || // unassigned contacts
+                            contact.assigned_to === currentUser.id || 
+                            (contact.assigned_to && contact.assigned_to.id === currentUser.id)
+                        );
+                        // Store contacts for search and display them
+                        allContacts = filteredContacts;
+                        displayContacts(filteredContacts);
+                    } else {
+                        // No contacts with matching manager_username
+                        allContacts = [];
+                        document.querySelector('#contacts-table tbody').innerHTML = 
+                            '<tr><td colspan="6" class="text-center">No contacts found with matching manager</td></tr>';
+                    }
+                } else {
+                    // No data or unexpected format
+                    allContacts = [];
+                    document.querySelector('#contacts-table tbody').innerHTML = 
+                        '<tr><td colspan="6" class="text-center">No contacts found</td></tr>';
+                }
+            } else {
+                // No manager_username in profile, try to get all contacts
+                const data = await apiRequest('contacts/');
+                
+                if (data && data.results) {
+                    // Store contacts for search and display them
+                    allContacts = data.results;
+                    displayContacts(data.results);
+                } else if (data && Array.isArray(data)) {
+                    // Store contacts for search and display them
+                    allContacts = data;
+                    displayContacts(data);
+                } else {
+                    allContacts = [];
+                    document.querySelector('#contacts-table tbody').innerHTML = 
+                        '<tr><td colspan="6" class="text-center">No contacts found</td></tr>';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading contacts:', error);
+            allContacts = [];
+            document.querySelector('#contacts-table tbody').innerHTML = 
+                '<tr><td colspan="6" class="text-center">Error loading contacts</td></tr>';
+        }
+    }
+    
+    // Load accounts for dropdown
+    async function loadAccounts() {
+        try {
+            // First get the current user's profile to get their manager_username
+            const userProfile = await apiRequest('profile/');
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            
+            let accounts = [];
+            if (userProfile && userProfile.manager_username) {
+                // Filter accounts by the user's manager_username
+                const data = await apiRequest(`accounts/?manager_username=${userProfile.manager_username}`);
+                
+                if (data && data.results) {
+                    // First check if any accounts have matching manager_username
+                    const managerAccounts = data.results.filter(account => 
+                        account.manager_username === userProfile.manager_username
+                    );
+                    
+                    if (managerAccounts.length > 0) {
+                        // Then filter those accounts to show only assigned to current user or unassigned
+                        accounts = managerAccounts.filter(account => 
+                            !account.assigned_to || // unassigned accounts
+                            account.assigned_to === currentUser.id || 
+                            (account.assigned_to && account.assigned_to.id === currentUser.id)
+                        );
+                    }
+                } else if (data && Array.isArray(data)) {
+                    // First check if any accounts have matching manager_username
+                    const managerAccounts = data.filter(account => 
+                        account.manager_username === userProfile.manager_username
+                    );
+                    
+                    if (managerAccounts.length > 0) {
+                        // Then filter those accounts to show only assigned to current user or unassigned
+                        accounts = managerAccounts.filter(account => 
+                            !account.assigned_to || // unassigned accounts
+                            account.assigned_to === currentUser.id || 
+                            (account.assigned_to && account.assigned_to.id === currentUser.id)
+                        );
+                    }
+                }
+            } else {
+                // Strict rule: If manager_username is not available, don't show any accounts
+                // Leave accounts array empty
+                accounts = [];
+                
+                // Disable the add contact button since there are no accounts to associate with
+                const addContactBtn = document.querySelector('button[data-bs-target="#addContactModal"]');
+                if (addContactBtn) {
+                    addContactBtn.disabled = true;
+                    addContactBtn.title = 'You must be assigned to a manager to add contacts';
+                }
+            }
+            
+            // Populate dropdown
+            const accountSelect = document.getElementById('account');
+            if (accounts.length > 0) {
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = account.name;
+                    accountSelect.appendChild(option);
+                });
+            } else {
+                // Add a placeholder option if no accounts found
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No accounts available';
+                option.disabled = true;
+                accountSelect.appendChild(option);
+            }
+        } catch (error) {
+            console.error('Error loading accounts for dropdown:', error);
+            // Add error option
+            const accountSelect = document.getElementById('account');
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading accounts';
+            option.disabled = true;
+            accountSelect.appendChild(option);
+        }
+    }
+    
+    // Display contacts with phone masking and clickable account names
+    function displayContacts(contacts) {
+        const tableBody = document.getElementById('contacts-table').getElementsByTagName('tbody')[0];
+        if (!contacts || contacts.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No contacts found</td></tr>';
+            return;
+        }
+        
+        tableBody.innerHTML = '';
+        contacts.forEach(contact => {
+            const row = document.createElement('tr');
+            
+            // Format phone number with masking
+            let phoneDisplay = 'N/A';
+            if (contact.phone) {
+                // Keep only the last 4 digits visible
+                const lastFourDigits = contact.phone.slice(-4);
+                phoneDisplay = `
+                    <div class="d-flex align-items-center">
+                        <span class="masked-phone" data-phone="${contact.phone}">XXXXX${lastFourDigits}</span>
+                        <button class="btn btn-sm ms-2 toggle-phone" data-phone-id="phone-${contact.id}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // No longer need account display formatting
+            
+            // Format the updated_at date if it exists - format as 'May 30, 2025'
+            let updatedAtDisplay = 'N/A';
+            if (contact.updated_at) {
+                const date = new Date(contact.updated_at);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                updatedAtDisplay = date.toLocaleDateString('en-US', options);
+            }
+            
+            row.innerHTML = `
+                <td>${contact.first_name} ${contact.last_name}</td>
+                <td>${contact.email || 'N/A'}</td>
+                <td id="phone-${contact.id}">${phoneDisplay}</td>
+                <td>${getAccountId(contact)}</td>
+                <td>${updatedAtDisplay}</td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="viewContact(${contact.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary me-1" onclick="editContact(${contact.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteContact(${contact.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+        
+        // Add event listeners for phone toggle buttons
+        document.querySelectorAll('.toggle-phone').forEach(button => {
+            button.addEventListener('click', function() {
+                const phoneId = this.getAttribute('data-phone-id');
+                const phoneElement = document.querySelector(`#${phoneId} .masked-phone`);
+                const fullPhone = phoneElement.getAttribute('data-phone');
+                
+                // Reset all other phone numbers to masked state
+                document.querySelectorAll('.masked-phone').forEach(el => {
+                    if (el !== phoneElement) {
+                        const lastFour = el.getAttribute('data-phone').slice(-4);
+                        el.textContent = `XXXXX${lastFour}`;
+                    }
+                });
+                
+                // Toggle current phone number
+                if (phoneElement.textContent.includes('X')) {
+                    phoneElement.textContent = fullPhone;
+                    this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                } else {
+                    const lastFour = fullPhone.slice(-4);
+                    phoneElement.textContent = `XXXXX${lastFour}`;
+                    this.innerHTML = '<i class="fas fa-eye"></i>';
+                }
+            });
+        });
+    }
+    
+    // Search contacts based on user input
+    function searchContacts() {
+        const searchTerm = document.getElementById('contact-search').value.toLowerCase().trim();
+        
+        // Apply all filters
+        let filteredContacts = allContacts;
+        
+        // Apply text search if provided
+        if (searchTerm) {
+            filteredContacts = filteredContacts.filter(contact => {
+                // Search in name, email, phone, account_id
+                return (
+                    `${contact.first_name} ${contact.last_name}`.toLowerCase().includes(searchTerm) ||
+                    (contact.email && contact.email.toLowerCase().includes(searchTerm)) ||
+                    (contact.phone && contact.phone.includes(searchTerm)) ||
+                    (contact.account && String(contact.account).includes(searchTerm))
+                );
+            });
+        }
+        
+        // Apply date filters if set
+        if (dateFilters.from || dateFilters.to) {
+            filteredContacts = filteredContacts.filter(contact => {
+                if (!contact.updated_at) return false;
+                
+                const updatedDate = new Date(contact.updated_at);
+                
+                // Check if date is after from date (if set)
+                if (dateFilters.from && updatedDate < dateFilters.from) {
+                    return false;
+                }
+                
+                // Check if date is before to date (if set)
+                if (dateFilters.to) {
+                    // Set time to end of day for the "to" date
+                    const toDateEnd = new Date(dateFilters.to);
+                    toDateEnd.setHours(23, 59, 59, 999);
+                    
+                    if (updatedDate > toDateEnd) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        }
+        
+        // Debug the structure of the first contact (if available)
+        if (filteredContacts && filteredContacts.length > 0) {
+            console.log('Contact object structure:', filteredContacts[0]);
+            console.log('Account ID value:', filteredContacts[0].account_id);
+            console.log('Account value:', filteredContacts[0].account);
+        }
+        
+        displayContacts(filteredContacts);
+    }
+    
+    // Save new contact
+    async function saveNewContact() {
+        const form = document.getElementById('contact-form');
+        const formData = serializeForm(form);
+        
+        const data = await apiRequest('contacts/', 'POST', formData);
+        if (data) {
+            // Close modal and reload contacts
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addContactModal'));
+            modal.hide();
+            form.reset();
+            loadContacts();
+            showNotification('Success', 'Contact created successfully');
+        }
+    }
+    
+    // View contact details
+    function viewContact(id) {
+        // Redirect to contact detail page
+        window.location.href = `/contacts/${id}/`;
+    }
+    
+    // Edit contact
+    function editContact(id) {
+        // Redirect to contact edit page
+        window.location.href = `/contacts/${id}/edit/`;
+    }
+    
+    // Delete contact
+    function deleteContact(id) {
+        // Implement delete contact functionality
+        if (confirm('Are you sure you want to delete this contact?')) {
+            apiRequest(`contacts/${id}/`, 'DELETE')
+                .then(() => {
+                    loadContacts();
+                    showNotification('Success', 'Contact deleted successfully');
+                });
+        }
+    }
+</script>
+{% endblock %}

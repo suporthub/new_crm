@@ -1,0 +1,344 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}System Settings - LiveFxHub CRM Admin{% endblock %}
+
+{% block page_title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Settings Navigation -->
+        <div class="col-md-3">
+            <div class="admin-card mb-4">
+                <div class="list-group list-group-flush">
+                    <a href="#general-settings" class="list-group-item list-group-item-action active" data-bs-toggle="tab">
+                        <i class="fas fa-cog me-2"></i> General Settings
+                    </a>
+                    <a href="#company-profile" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-building me-2"></i> Company Profile
+                    </a>
+                    <a href="#user-management" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-users-cog me-2"></i> User Management
+                    </a>
+                    <a href="#email-settings" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-envelope me-2"></i> Email Settings
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-bell me-2"></i> Notifications
+                    </a>
+                    <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-shield-alt me-2"></i> Security
+                    </a>
+                    <a href="#integrations" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-plug me-2"></i> Integrations
+                    </a>
+                    <a href="#backup-restore" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-database me-2"></i> Backup & Restore
+                    </a>
+                    <a href="#system-logs" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="fas fa-history me-2"></i> System Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Content -->
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- General Settings -->
+                <div class="tab-pane fade show active" id="general-settings">
+                    <div class="admin-card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">General Settings</h5>
+                            <button class="btn btn-primary btn-sm" id="saveGeneralSettingsBtn">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <form id="generalSettingsForm">
+                                <div class="mb-3">
+                                    <label for="siteName" class="form-label">Site Name</label>
+                                    <input type="text" class="form-control" id="siteName" name="siteName" value="LiveFxHub CRM">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="siteUrl" class="form-label">Site URL</label>
+                                    <input type="url" class="form-control" id="siteUrl" name="siteUrl" value="https://livefxhub.com">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="timezone" class="form-label">Timezone</label>
+                                            <select class="form-select" id="timezone" name="timezone">
+                                                <option value="UTC" selected>UTC</option>
+                                                <option value="America/New_York">Eastern Time (ET)</option>
+                                                <option value="America/Chicago">Central Time (CT)</option>
+                                                <option value="America/Denver">Mountain Time (MT)</option>
+                                                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                                <option value="Europe/London">London (GMT)</option>
+                                                <option value="Europe/Paris">Paris (CET)</option>
+                                                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="dateFormat" class="form-label">Date Format</label>
+                                            <select class="form-select" id="dateFormat" name="dateFormat">
+                                                <option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+                                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="defaultLanguage" class="form-label">Default Language</label>
+                                    <select class="form-select" id="defaultLanguage" name="defaultLanguage">
+                                        <option value="en" selected>English</option>
+                                        <option value="es">Spanish</option>
+                                        <option value="fr">French</option>
+                                        <option value="de">German</option>
+                                        <option value="ja">Japanese</option>
+                                        <option value="zh">Chinese</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="currencySymbol" class="form-label">Currency Symbol</label>
+                                    <select class="form-select" id="currencySymbol" name="currencySymbol">
+                                        <option value="$" selected>$ (USD)</option>
+                                        <option value="€">€ (EUR)</option>
+                                        <option value="£">£ (GBP)</option>
+                                        <option value="¥">¥ (JPY)</option>
+                                        <option value="₹">₹ (INR)</option>
+                                    </select>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="maintenanceMode" name="maintenanceMode">
+                                    <label class="form-check-label" for="maintenanceMode">Maintenance Mode</label>
+                                    <div class="form-text">When enabled, the site will show a maintenance page to all non-admin users.</div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Company Profile -->
+                <div class="tab-pane fade" id="company-profile">
+                    <div class="admin-card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Company Profile</h5>
+                            <button class="btn btn-primary btn-sm" id="saveCompanyProfileBtn">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <form id="companyProfileForm">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <div class="text-center mb-3">
+                                            <div class="company-logo mb-2">
+                                                <img src="{% static 'images/default-logo.png' %}" alt="Company Logo" class="img-fluid" style="max-height: 100px;">
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-upload me-1"></i> Change Logo
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="mb-3">
+                                            <label for="companyName" class="form-label">Company Name</label>
+                                            <input type="text" class="form-control" id="companyName" name="companyName" value="LiveFxHub Inc.">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="companyTagline" class="form-label">Tagline</label>
+                                            <input type="text" class="form-control" id="companyTagline" name="companyTagline" value="Leading CRM Solution for Financial Services">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="companyDescription" class="form-label">Company Description</label>
+                                    <textarea class="form-control" id="companyDescription" name="companyDescription" rows="3">LiveFxHub provides comprehensive CRM solutions tailored for the financial services industry, helping businesses streamline operations and improve customer relationships.</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="companyEmail" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="companyEmail" name="companyEmail" value="info@livefxhub.com">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="companyPhone" class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="companyPhone" name="companyPhone" value="+1 (555) 123-4567">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="companyAddress" class="form-label">Address</label>
+                                    <textarea class="form-control" id="companyAddress" name="companyAddress" rows="2">123 Business Ave, Suite 500, San Francisco, CA 94107, USA</textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="companyWebsite" class="form-label">Website</label>
+                                            <input type="url" class="form-control" id="companyWebsite" name="companyWebsite" value="https://livefxhub.com">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="taxId" class="form-label">Tax ID / VAT Number</label>
+                                            <input type="text" class="form-control" id="taxId" name="taxId" value="US12345678">
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other settings tabs content would go here -->
+                <div class="tab-pane fade" id="user-management">
+                    <div class="admin-card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">User Management Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="userManagementSettingsForm">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="allowUserRegistration" name="allowUserRegistration" checked>
+                                    <label class="form-check-label" for="allowUserRegistration">Allow User Registration</label>
+                                    <div class="form-text">When enabled, users can register for an account on the site.</div>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="requireEmailVerification" name="requireEmailVerification" checked>
+                                    <label class="form-check-label" for="requireEmailVerification">Require Email Verification</label>
+                                    <div class="form-text">When enabled, users must verify their email address before they can log in.</div>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="allowSocialLogin" name="allowSocialLogin" checked>
+                                    <label class="form-check-label" for="allowSocialLogin">Allow Social Login</label>
+                                    <div class="form-text">When enabled, users can log in using social media accounts.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="defaultUserRole" class="form-label">Default User Role</label>
+                                    <select class="form-select" id="defaultUserRole" name="defaultUserRole">
+                                        <option value="user" selected>User</option>
+                                        <option value="staff">Staff</option>
+                                        <option value="manager">Manager</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="inactiveUserDays" class="form-label">Mark Users Inactive After</label>
+                                    <select class="form-select" id="inactiveUserDays" name="inactiveUserDays">
+                                        <option value="30">30 days</option>
+                                        <option value="60" selected>60 days</option>
+                                        <option value="90">90 days</option>
+                                        <option value="never">Never</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="saveUserSettingsBtn">
+                                    <i class="fas fa-save me-1"></i> Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the tabs
+        const tabItems = document.querySelectorAll('.list-group-item');
+        tabItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all tabs
+                tabItems.forEach(tab => tab.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Show the relevant tab content
+                const tabId = this.getAttribute('href');
+                const tabContent = document.querySelector(tabId);
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                tabContent.classList.add('show', 'active');
+            });
+        });
+        
+        // Save General Settings Button
+        document.getElementById('saveGeneralSettingsBtn').addEventListener('click', function() {
+            // In a real implementation, this would submit the form data via AJAX
+            showNotification('Success', 'General settings saved successfully!', 'success');
+        });
+        
+        // Save Company Profile Button
+        document.getElementById('saveCompanyProfileBtn').addEventListener('click', function() {
+            // In a real implementation, this would submit the form data via AJAX
+            showNotification('Success', 'Company profile saved successfully!', 'success');
+        });
+        
+        // Save User Settings Button
+        document.getElementById('saveUserSettingsBtn').addEventListener('click', function() {
+            // In a real implementation, this would submit the form data via AJAX
+            showNotification('Success', 'User management settings saved successfully!', 'success');
+        });
+    });
+    
+    // Notification function
+    function showNotification(title, message, type = 'success') {
+        const icon = type === 'success' ? 'check-circle' :
+                    type === 'warning' ? 'exclamation-triangle' :
+                    type === 'error' ? 'times-circle' : 'info-circle';
+        
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${icon} me-2"></i>
+                    <strong>${title}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '5';
+            document.body.appendChild(container);
+            container.appendChild(toast);
+        } else {
+            toastContainer.appendChild(toast);
+        }
+        
+        const bsToast = new bootstrap.Toast(toast, {
+            animation: true,
+            autohide: true,
+            delay: 5000
+        });
+        
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

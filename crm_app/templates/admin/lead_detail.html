@@ -1,0 +1,506 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Lead Details - LiveFxHub CRM Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="h3 mb-0 text-gray-800">Lead Details</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'admin_leads' %}">Leads</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Lead Details</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Lead Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name={{ lead.first_name }}+{{ lead.last_name }}&background=0D8ABC&color=fff&size=128" alt="Lead Avatar" class="rounded-circle img-thumbnail" style="width: 120px; height: 120px;">
+                        <h5 class="mt-3">{{ lead.first_name }} {{ lead.last_name }}</h5>
+                        <span class="badge bg-primary">{{ lead.lead_status|title }}</span>
+                    </div>
+                    
+                    <div class="list-group">
+                        {% if lead.company %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Company</small>
+                            <span>{{ lead.company }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.title %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Job Title</small>
+                            <span>{{ lead.title }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.email %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Email</small>
+                            <span>{{ lead.email }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.phone %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Phone</small>
+                            <span>{{ lead.phone }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.mobile %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Mobile</small>
+                            <span>{{ lead.mobile }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.website %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Website</small>
+                            <span><a href="{{ lead.website }}" target="_blank">{{ lead.website }}</a></span>
+                        </div>
+                        {% endif %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Lead Source</small>
+                            <span>{{ lead.get_lead_source_display }}</span>
+                        </div>
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Lead Status</small>
+                            <span>{{ lead.get_lead_status_display }}</span>
+                        </div>
+                        {% if lead.industry %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Industry</small>
+                            <span>{{ lead.industry.name }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.annual_revenue %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Annual Revenue</small>
+                            <span>${{ lead.annual_revenue }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.employees %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Number of Employees</small>
+                            <span>{{ lead.employees }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.address %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Address</small>
+                            <span>{{ lead.address }}</span>
+                        </div>
+                        {% endif %}
+                        {% if lead.assigned_to %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Assigned To</small>
+                            <span>{{ lead.assigned_to.first_name }} {{ lead.assigned_to.last_name }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="list-group-item">
+                            <small class="text-muted d-block">Created Date</small>
+                            <span>{{ lead.created_at|date:"F d, Y" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{% url 'admin_lead_edit' lead.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Edit Lead
+                        </a>
+                        <a href="{% url 'admin_leads' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            {% if lead.description %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Description</h6>
+                </div>
+                <div class="card-body">
+                    <p>{{ lead.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Related Tasks</h6>
+                    <button class="btn btn-sm btn-primary" id="add-task-btn">
+                        <i class="fas fa-plus me-1"></i> Add Task
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if lead.tasks.all %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Assigned To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in lead.tasks.all %}
+                                <tr>
+                                    <td>{{ task.subject }}</td>
+                                    <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if task.status == 'not_started' %}
+                                            <span class="badge bg-secondary">Not Started</span>
+                                        {% elif task.status == 'in_progress' %}
+                                            <span class="badge bg-primary">In Progress</span>
+                                        {% elif task.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif task.status == 'deferred' %}
+                                            <span class="badge bg-warning">Deferred</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Waiting</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if task.priority == 'high' %}
+                                            <span class="badge bg-danger">High</span>
+                                        {% elif task.priority == 'medium' %}
+                                            <span class="badge bg-warning">Medium</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Low</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ task.assigned_to.first_name }} {{ task.assigned_to.last_name }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">No tasks associated with this lead.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Related Notes</h6>
+                    <button class="btn btn-sm btn-primary" id="add-note-btn">
+                        <i class="fas fa-plus me-1"></i> Add Note
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if lead.notes.all %}
+                    <div class="list-group">
+                        {% for note in lead.notes.all %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ note.subject }}</h5>
+                                <small>{{ note.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-1">{{ note.content }}</p>
+                            <small>By: {{ note.created_by.first_name }} {{ note.created_by.last_name }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">No notes associated with this lead.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Related Documents Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Related Documents</h6>
+                    <button class="btn btn-sm btn-primary" id="add-document-btn">
+                        <i class="fas fa-plus me-1"></i> Add Document
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if lead.documents.all %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Uploaded At</th>
+                                    <th>File</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in lead.documents.all %}
+                                <tr>
+                                    <td>{{ doc.title }}</td>
+                                    <td>{{ doc.description }}</td>
+                                    <td>{{ doc.created_at|date:"M d, Y" }}</td>
+                                    <td><a href="{{ doc.file.url }}" target="_blank">Download</a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-muted">No documents associated with this lead.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notification-container" class="notification-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;"></div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="note-form">
+                    <div class="mb-3">
+                        <label for="note-subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="note-subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="note-content" class="form-label">Content</label>
+                        <textarea class="form-control" id="note-content" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-note-btn">Save Note</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <div class="mb-3">
+                        <label for="task-subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="task-subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-due-date" class="form-label">Due Date</label>
+                        <input type="datetime-local" class="form-control" id="task-due-date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-priority" class="form-label">Priority</label>
+                        <select class="form-select" id="task-priority">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-assigned-to" class="form-label">Assigned To</label>
+                        <select class="form-select" id="task-assigned-to" required>
+                            <option value="">Select User</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="task-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="task-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-task-btn">Save Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Document Modal -->
+<div class="modal fade" id="addDocumentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="document-form">
+                    <div class="mb-3">
+                        <label for="document-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="document-title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document-file" class="form-label">File</label>
+                        <input type="file" class="form-control" id="document-file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="document-description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-document-btn">Save Document</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    const leadId = "{{ lead.id }}";
+
+    // Helper: get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Simple notification
+    function showNotification(title, message, type) {
+        const container = document.getElementById('notification-container');
+        const wrapper = document.createElement('div');
+        const bg = type === 'success' ? 'bg-success' : (type === 'error' ? 'bg-danger' : 'bg-info');
+        wrapper.className = `alert ${bg} text-white d-flex justify-content-between align-items-center fade show`;
+        wrapper.innerHTML = `<div><strong>${title}:</strong> ${message}</div><button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="alert"></button>`;
+        container.appendChild(wrapper);
+        setTimeout(() => {
+            wrapper.classList.remove('show');
+            wrapper.classList.add('hide');
+            setTimeout(() => wrapper.remove(), 500);
+        }, 5000);
+    }
+
+    // API helper
+    async function apiRequest(endpoint, method='GET', data=null, isForm=false) {
+        const opts = { method, headers: { 'X-CSRFToken': getCookie('csrftoken') } };
+        if (data) {
+            if (isForm) {
+                opts.body = data;
+            } else {
+                opts.headers['Content-Type'] = 'application/json';
+                opts.body = JSON.stringify(data);
+            }
+        }
+        const resp = await fetch(endpoint, opts);
+        if (!resp.ok) {
+            throw new Error(await resp.text());
+        }
+        return await resp.json();
+    }
+
+    // Load users for task assignment
+    async function loadUsers() {
+        try {
+            const users = await apiRequest('/api/users-by-manager/');
+            const list = users.results || users;
+            const dropdown = document.getElementById('task-assigned-to');
+            dropdown.innerHTML = '<option value="">Select User</option>';
+            list.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.first_name || ''} ${u.last_name || ''} (${u.username})`;
+                dropdown.appendChild(opt);
+            });
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    // Save Note
+    async function saveNote() {
+        const subj = document.getElementById('note-subject').value.trim();
+        const cont = document.getElementById('note-content').value.trim();
+        if (!subj || !cont) { showNotification('Error','Fill all fields','error'); return; }
+        try {
+            await apiRequest('/api/notes/','POST',{subject:subj,content:cont,related_lead:leadId});
+            showNotification('Success','Note added','success');
+            bootstrap.Modal.getInstance(document.getElementById('addNoteModal')).hide();
+            location.reload();
+        } catch(err) { showNotification('Error',err.message,'error'); }
+    }
+
+    // Save Task
+    async function saveTask() {
+        const subj = document.getElementById('task-subject').value.trim();
+        const due = document.getElementById('task-due-date').value;
+        const priority = document.getElementById('task-priority').value;
+        const assigned = document.getElementById('task-assigned-to').value;
+        const desc = document.getElementById('task-description').value.trim();
+        if (!subj || !due || !assigned) { showNotification('Error','Fill all required task fields','error'); return; }
+        const data = {subject:subj,due_date:due,priority,description:desc,status:'not_started',related_lead:leadId,assigned_to:assigned};
+        try {
+            await apiRequest('/api/tasks/','POST',data);
+            showNotification('Success','Task added','success');
+            bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+            location.reload();
+        } catch(err) { showNotification('Error',err.message,'error'); }
+    }
+
+    // Save Document
+    async function saveDocument() {
+        const title = document.getElementById('document-title').value.trim();
+        const file = document.getElementById('document-file').files[0];
+        if (!title || !file) { showNotification('Error','Provide title and file','error'); return; }
+        const desc = document.getElementById('document-description').value.trim();
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', desc);
+        formData.append('related_lead', leadId);
+        formData.append('file', file);
+        try {
+            await apiRequest('/api/documents/','POST',formData,true);
+            showNotification('Success','Document uploaded','success');
+            bootstrap.Modal.getInstance(document.getElementById('addDocumentModal')).hide();
+            location.reload();
+        } catch(err) { showNotification('Error',err.message,'error'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('add-note-btn').addEventListener('click', () => new bootstrap.Modal(document.getElementById('addNoteModal')).show());
+        document.getElementById('add-task-btn').addEventListener('click', () => { loadUsers(); new bootstrap.Modal(document.getElementById('addTaskModal')).show(); });
+        document.getElementById('add-document-btn').addEventListener('click', () => new bootstrap.Modal(document.getElementById('addDocumentModal')).show());
+
+        document.getElementById('save-note-btn').addEventListener('click', saveNote);
+        document.getElementById('save-task-btn').addEventListener('click', saveTask);
+        document.getElementById('save-document-btn').addEventListener('click', saveDocument);
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

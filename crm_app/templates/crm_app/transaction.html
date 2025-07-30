@@ -1,0 +1,235 @@
+{% extends 'crm_app/base.html' %}
+
+{% block title %}Transaction Details - LiveFxHub CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="transaction-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Transaction Details</h1>
+        <div>
+            <button id="refresh-button" class="btn btn-outline-primary me-2">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button id="back-button" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+    
+    <div class="alert alert-warning mb-4">
+        <i class="fas fa-info-circle me-2"></i> You are viewing a transaction. This page can only be accessed from the dashboard.
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Transaction Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="transaction-details">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Transaction Type</label>
+                            <div id="transaction-type">Loading...</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Amount</label>
+                            <div id="transaction-amount">Loading...</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Date</label>
+                            <div id="transaction-date">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status</label>
+                            <div><span id="transaction-status" class="transaction-status">Loading...</span></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Reference Number</label>
+                            <div id="transaction-reference">Loading...</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Account</label>
+                            <div id="transaction-account">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="deal-container" class="mb-3" style="display: none;">
+                    <label class="form-label fw-bold">Related Deal</label>
+                    <div id="transaction-deal">Loading...</div>
+                </div>
+                
+                <div id="description-container" class="mb-3" style="display: none;">
+                    <label class="form-label fw-bold">Description</label>
+                    <div id="transaction-description">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Transaction Timeline</h5>
+        </div>
+        <div class="card-body">
+            <ul class="timeline">
+                <li class="timeline-item">
+                    <div class="timeline-marker bg-primary"></div>
+                    <div class="timeline-content">
+                        <h5 class="timeline-title">Transaction Created</h5>
+                        <p class="timeline-date" id="transaction-created-date">Loading...</p>
+                    </div>
+                </li>
+                <li class="timeline-item" id="transaction-updated-item" style="display: none;">
+                    <div class="timeline-marker bg-info"></div>
+                    <div class="timeline-content">
+                        <h5 class="timeline-title">Transaction Updated</h5>
+                        <p class="timeline-date" id="transaction-updated-date">Loading...</p>
+                    </div>
+                </li>
+                <li class="timeline-item" id="transaction-completed-item" style="display: none;">
+                    <div class="timeline-marker bg-success"></div>
+                    <div class="timeline-content">
+                        <h5 class="timeline-title">Transaction Completed</h5>
+                        <p class="timeline-date" id="transaction-completed-date">Loading...</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Timeline styling */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+        list-style: none;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 30px;
+    }
+    
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+    }
+    
+    .timeline-content {
+        padding-left: 15px;
+        border-left: 1px solid #e9ecef;
+    }
+    
+    .timeline-title {
+        margin-bottom: 5px;
+    }
+    
+    .timeline-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if we're coming from dashboard
+        const fromDashboard = sessionStorage.getItem('from_dashboard') === 'true';
+        if (!fromDashboard) {
+            // Redirect to dashboard if not coming from there
+            window.location.href = "{% url 'dashboard-page' %}";
+            return;
+        }
+        
+        // Get transaction ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const transactionId = urlParams.get('id');
+        
+        if (transactionId) {
+            loadTransactionData(transactionId);
+        } else {
+            document.getElementById('transaction-container').innerHTML = '<div class="alert alert-danger">Transaction ID not provided</div>';
+        }
+        
+        // Set up back button
+        document.getElementById('back-button').addEventListener('click', function() {
+            window.location.href = "{% url 'dashboard-page' %}";
+        });
+        
+        // Set up refresh button
+        document.getElementById('refresh-button').addEventListener('click', function() {
+            loadTransactionData(transactionId);
+        });
+    });
+
+    async function loadTransactionData(transactionId) {
+        const data = await apiRequest(`transactions/${transactionId}/`);
+        if (data) {
+            // Populate transaction details
+            document.getElementById('transaction-type').textContent = data.transaction_type_display;
+            document.getElementById('transaction-amount').textContent = `$${data.amount}`;
+            document.getElementById('transaction-date').textContent = formatDate(data.date);
+            document.getElementById('transaction-status').textContent = data.status;
+            document.getElementById('transaction-reference').textContent = data.reference_number || 'N/A';
+            document.getElementById('transaction-account').textContent = data.account_name;
+            
+            // Set created date in timeline
+            document.getElementById('transaction-created-date').textContent = formatDateTime(data.created_at);
+            
+            // Show updated date in timeline if different from created date
+            if (data.updated_at && data.updated_at !== data.created_at) {
+                document.getElementById('transaction-updated-date').textContent = formatDateTime(data.updated_at);
+                document.getElementById('transaction-updated-item').style.display = 'block';
+            }
+            
+            // Show completed date in timeline if status is completed
+            if (data.status === 'completed') {
+                document.getElementById('transaction-completed-date').textContent = formatDateTime(data.updated_at);
+                document.getElementById('transaction-completed-item').style.display = 'block';
+            }
+            
+            // Set status class
+            const statusElement = document.getElementById('transaction-status');
+            statusElement.className = 'transaction-status';
+            if (data.status === 'pending') {
+                statusElement.classList.add('status-pending');
+            } else if (data.status === 'completed') {
+                statusElement.classList.add('status-completed');
+            } else if (data.status === 'overdue') {
+                statusElement.classList.add('status-overdue');
+            }
+            
+            // Show description if available
+            if (data.description) {
+                document.getElementById('transaction-description').textContent = data.description;
+                document.getElementById('description-container').style.display = 'block';
+            } else {
+                document.getElementById('description-container').style.display = 'none';
+            }
+            
+            // Show deal if available
+            if (data.deal_name) {
+                document.getElementById('transaction-deal').textContent = data.deal_name;
+                document.getElementById('deal-container').style.display = 'block';
+            } else {
+                document.getElementById('deal-container').style.display = 'none';
+            }
+        }
+    }
+</script>
+{% endblock %}

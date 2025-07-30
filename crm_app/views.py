@@ -711,10 +711,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                 if is_naive(end_dt):
                     end_dt = make_aware(end_dt, tz)
                 queryset = queryset.filter(due_date__range=(start_dt, end_dt))
-            queryset = queryset.filter(
-                due_date__date__gte=due_date_start_param,
-                due_date__date__lte=due_date_end_param
-            )
+
         
         return queryset
 

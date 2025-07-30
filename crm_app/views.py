@@ -299,7 +299,41 @@ class AccountViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'website', 'phone', 'description']
     ordering_fields = ['name', 'created_at', 'annual_revenue']
-    
+
+    def get_queryset(self):
+        """Return accounts visible to the requesting user with optional ?manager=username filter."""
+        from django.db.models import Q as models_Q
+        from django.contrib.auth.models import User
+        user = self.request.user
+
+        # Base queryset and optional manager filter via query param
+        base_qs = Account.objects.all()
+        manager_username_param = self.request.query_params.get('manager')
+        if manager_username_param:
+            base_qs = base_qs.filter(manager_username=manager_username_param)
+
+        # Staff / superuser → unrestricted
+        if user.is_staff or user.is_superuser:
+            return base_qs
+
+        # Identify if user is a manager
+        is_manager = False
+        if hasattr(user, 'profile') and user.profile and user.profile.role:
+            is_manager = user.profile.role.lower() == 'manager'
+
+        if is_manager:
+            managed_user_ids = User.objects.filter(profile__manager_username=user.username).values_list('id', flat=True)
+            return base_qs.filter(
+                models_Q(assigned_to=user) |
+                models_Q(created_by=user) |
+                models_Q(manager_username=user.username) |
+                models_Q(assigned_to__id__in=managed_user_ids) |
+                models_Q(created_by__id__in=managed_user_ids)
+            ).distinct()
+
+        # Regular user – only accounts they own/created
+        return base_qs.filter(models_Q(assigned_to=user) | models_Q(created_by=user))
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
     
@@ -352,7 +386,37 @@ class ContactViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['first_name', 'last_name', 'email', 'phone', 'mobile', 'job_title']
     ordering_fields = ['first_name', 'last_name', 'created_at']
-    
+
+    def get_queryset(self):
+        """Return contacts visible to the requesting user with optional ?manager=username filter."""
+        from django.db.models import Q as models_Q
+        from django.contrib.auth.models import User
+        user = self.request.user
+
+        base_qs = Contact.objects.all()
+        manager_username_param = self.request.query_params.get('manager')
+        if manager_username_param:
+            base_qs = base_qs.filter(manager_username=manager_username_param)
+
+        if user.is_staff or user.is_superuser:
+            return base_qs
+
+        is_manager = False
+        if hasattr(user, 'profile') and user.profile and user.profile.role:
+            is_manager = user.profile.role.lower() == 'manager'
+
+        if is_manager:
+            managed_user_ids = User.objects.filter(profile__manager_username=user.username).values_list('id', flat=True)
+            return base_qs.filter(
+                models_Q(assigned_to=user) |
+                models_Q(created_by=user) |
+                models_Q(manager_username=user.username) |
+                models_Q(assigned_to__id__in=managed_user_ids) |
+                models_Q(created_by__id__in=managed_user_ids)
+            ).distinct()
+
+        return base_qs.filter(models_Q(assigned_to=user) | models_Q(created_by=user))
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
     
@@ -393,14 +457,36 @@ class LeadViewSet(viewsets.ModelViewSet):
     ordering_fields = ['first_name', 'last_name', 'created_at', 'lead_status']
     
     def get_queryset(self):
+        """Return leads visible to the requesting user.
+        • Staff / superuser  → all leads.
+        • Manager            → leads assigned to / created by self **or** any of their managed users.
+        • Regular user       → leads assigned to or created by them.
+        Un-assigned leads are only visible to staff.
         """
-        This view should return a list of all leads that are either:
-        1. Assigned to the currently authenticated user, OR
-        2. Not assigned to any user (assigned_to is null)
-        """
+        from django.db.models import Q as models_Q
         user = self.request.user
-        # Filter leads to show only those assigned to current user or with null assigned_to
-        return Lead.objects.filter(Q(assigned_to=user) | Q(assigned_to__isnull=True))
+
+        # Staff / superusers see everything
+        if user.is_staff or user.is_superuser:
+            return Lead.objects.all()
+
+        # Determine if user is a manager (based on optional user.profile.role)
+        is_manager = False
+        if hasattr(user, 'profile') and user.profile and user.profile.role:
+            is_manager = user.profile.role.lower() == 'manager'
+
+        if is_manager:
+            # Fetch IDs of users managed by this manager (assuming manager_username linkage)
+            managed_user_ids = User.objects.filter(profile__manager_username=user.username).values_list('id', flat=True)
+            return Lead.objects.filter(
+                models_Q(assigned_to=user) |
+                models_Q(created_by=user) |
+                models_Q(assigned_to__id__in=managed_user_ids) |
+                models_Q(created_by__id__in=managed_user_ids)
+            ).distinct()
+
+        # Regular user – only their own leads (assigned or created)
+        return Lead.objects.filter(models_Q(assigned_to=user) | models_Q(created_by=user))
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -518,7 +604,37 @@ class DealViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['name', 'created_at', 'amount', 'closing_date', 'stage', 'probability']
-    
+
+    def get_queryset(self):
+        """Return deals visible to the requesting user with optional ?manager=username filter."""
+        from django.db.models import Q as models_Q
+        from django.contrib.auth.models import User
+        user = self.request.user
+
+        base_qs = Deal.objects.all()
+        manager_username_param = self.request.query_params.get('manager')
+        if manager_username_param:
+            base_qs = base_qs.filter(account__manager_username=manager_username_param)
+
+        if user.is_staff or user.is_superuser:
+            return base_qs
+
+        is_manager = False
+        if hasattr(user, 'profile') and user.profile and user.profile.role:
+            is_manager = user.profile.role.lower() == 'manager'
+
+        if is_manager:
+            managed_user_ids = User.objects.filter(profile__manager_username=user.username).values_list('id', flat=True)
+            return base_qs.filter(
+                models_Q(assigned_to=user) |
+                models_Q(created_by=user) |
+                models_Q(account__manager_username=user.username) |
+                models_Q(assigned_to__id__in=managed_user_ids) |
+                models_Q(created_by__id__in=managed_user_ids)
+            ).distinct()
+
+        return base_qs.filter(models_Q(assigned_to=user) | models_Q(created_by=user))
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
     

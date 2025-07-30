@@ -124,6 +124,7 @@ WSGI_APPLICATION = "crm.wsgi.application"
 #     }
 # }
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -134,6 +135,7 @@ DATABASES = {
         'PORT': '3306',
     }
 }
+
 
 
 # Password validation

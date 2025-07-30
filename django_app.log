@@ -1478,3 +1478,202 @@ django.urls.exceptions.NoReverseMatch: Reverse for 'admin_calendar' not found. '
 [2025-07-30 10:53:56,965] INFO crm_app.views: Stored in session - User ID: 4, Manager: INDIAmanager
 [2025-07-30 10:53:56,965] INFO crm_app.views: Login from IP: 127.0.0.1
 [2025-07-30 10:53:57,114] INFO crm_app.views: === Login successful ===
+[2025-07-30 11:19:02,608] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 11:19:07,531] WARNING django.request: Not Found: /favicon.ico
+[2025-07-30 11:24:35,573] WARNING django.request: Not Found: /favicon.ico
+[2025-07-30 11:26:38,940] INFO crm_app.views: === Starting leads_page view ===
+[2025-07-30 11:26:38,944] INFO crm_app.views: Authenticated user (from @login_required): INDIA_USER_1 (ID: 4), IsAuthenticated: True
+[2025-07-30 11:26:38,949] INFO crm_app.views: UserProfile found for INDIA_USER_1. Manager from profile: INDIAmanager.
+[2025-07-30 11:26:38,952] INFO crm_app.views: Sort parameters - field: -created_at, direction: desc
+[2025-07-30 11:26:38,952] INFO crm_app.views: Building leads queryset with conditions:
+[2025-07-30 11:26:38,953] INFO crm_app.views:  - Including leads assigned to: INDIA_USER_1 (ID: 4)
+[2025-07-30 11:26:38,953] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIA_USER_1' (current user)
+[2025-07-30 11:26:38,954] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIAmanager' (current user's manager)
+[2025-07-30 11:26:38,954] INFO crm_app.views: Final query structure: (Assigned to 'INDIA_USER_1') OR (IsUnassigned AND (LeadManager='INDIA_USER_1' OR LeadManager='INDIAmanager'))
+[2025-07-30 11:26:38,991] INFO crm_app.views: Initial query count: 11
+[2025-07-30 11:26:38,991] INFO crm_app.views: Sample of leads found:
+[2025-07-30 11:26:38,995] INFO crm_app.views: - Lead ID: 2, Name: india lead 1
+[2025-07-30 11:26:38,996] INFO crm_app.views:   Assigned to: INDIA_USER_1
+[2025-07-30 11:26:38,997] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:38,997] INFO crm_app.views: - Lead ID: 3, Name: india lead2
+[2025-07-30 11:26:38,997] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:38,997] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:38,997] INFO crm_app.views: - Lead ID: 4, Name: india lead3
+[2025-07-30 11:26:38,997] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:38,997] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:38,997] INFO crm_app.views: - Lead ID: 5, Name: india lead4
+[2025-07-30 11:26:38,998] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:38,998] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:38,998] INFO crm_app.views: - Lead ID: 6, Name: india lead 5
+[2025-07-30 11:26:38,998] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:38,998] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:38,998] INFO crm_app.views: Applied sorting: -created_at
+[2025-07-30 11:26:39,000] INFO crm_app.views: Final leads count: 11
+[2025-07-30 11:26:39,005] INFO crm_app.views: === Finishing leads_page view ===
+[2025-07-30 11:26:48,448] INFO crm_app.views: === Starting leads_page view ===
+[2025-07-30 11:26:48,449] INFO crm_app.views: Authenticated user (from @login_required): INDIA_USER_1 (ID: 4), IsAuthenticated: True
+[2025-07-30 11:26:48,453] INFO crm_app.views: UserProfile found for INDIA_USER_1. Manager from profile: INDIAmanager.
+[2025-07-30 11:26:48,456] INFO crm_app.views: Sort parameters - field: -created_at, direction: desc
+[2025-07-30 11:26:48,456] INFO crm_app.views: Building leads queryset with conditions:
+[2025-07-30 11:26:48,456] INFO crm_app.views:  - Including leads assigned to: INDIA_USER_1 (ID: 4)
+[2025-07-30 11:26:48,456] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIA_USER_1' (current user)
+[2025-07-30 11:26:48,457] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIAmanager' (current user's manager)
+[2025-07-30 11:26:48,457] INFO crm_app.views: Final query structure: (Assigned to 'INDIA_USER_1') OR (IsUnassigned AND (LeadManager='INDIA_USER_1' OR LeadManager='INDIAmanager'))
+[2025-07-30 11:26:48,465] INFO crm_app.views: Initial query count: 11
+[2025-07-30 11:26:48,466] INFO crm_app.views: Sample of leads found:
+[2025-07-30 11:26:48,467] INFO crm_app.views: - Lead ID: 2, Name: india lead 1
+[2025-07-30 11:26:48,468] INFO crm_app.views:   Assigned to: INDIA_USER_1
+[2025-07-30 11:26:48,469] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:48,469] INFO crm_app.views: - Lead ID: 3, Name: india lead2
+[2025-07-30 11:26:48,469] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:48,469] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:48,469] INFO crm_app.views: - Lead ID: 4, Name: india lead3
+[2025-07-30 11:26:48,470] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:48,470] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:48,470] INFO crm_app.views: - Lead ID: 5, Name: india lead4
+[2025-07-30 11:26:48,470] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:48,470] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:48,471] INFO crm_app.views: - Lead ID: 6, Name: india lead 5
+[2025-07-30 11:26:48,471] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:48,471] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:48,471] INFO crm_app.views: Applied sorting: -created_at
+[2025-07-30 11:26:48,474] INFO crm_app.views: Final leads count: 11
+[2025-07-30 11:26:48,478] INFO crm_app.views: === Finishing leads_page view ===
+[2025-07-30 11:26:58,740] INFO crm_app.views: === Starting leads_page view ===
+[2025-07-30 11:26:58,740] INFO crm_app.views: Authenticated user (from @login_required): INDIA_USER_1 (ID: 4), IsAuthenticated: True
+[2025-07-30 11:26:58,744] INFO crm_app.views: UserProfile found for INDIA_USER_1. Manager from profile: INDIAmanager.
+[2025-07-30 11:26:58,746] INFO crm_app.views: Sort parameters - field: -created_at, direction: desc
+[2025-07-30 11:26:58,746] INFO crm_app.views: Building leads queryset with conditions:
+[2025-07-30 11:26:58,746] INFO crm_app.views:  - Including leads assigned to: INDIA_USER_1 (ID: 4)
+[2025-07-30 11:26:58,746] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIA_USER_1' (current user)
+[2025-07-30 11:26:58,746] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIAmanager' (current user's manager)
+[2025-07-30 11:26:58,746] INFO crm_app.views: Final query structure: (Assigned to 'INDIA_USER_1') OR (IsUnassigned AND (LeadManager='INDIA_USER_1' OR LeadManager='INDIAmanager'))
+[2025-07-30 11:26:58,752] INFO crm_app.views: Initial query count: 11
+[2025-07-30 11:26:58,752] INFO crm_app.views: Sample of leads found:
+[2025-07-30 11:26:58,753] INFO crm_app.views: - Lead ID: 2, Name: india lead 1
+[2025-07-30 11:26:58,755] INFO crm_app.views:   Assigned to: INDIA_USER_1
+[2025-07-30 11:26:58,755] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:58,756] INFO crm_app.views: - Lead ID: 3, Name: india lead2
+[2025-07-30 11:26:58,756] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:58,756] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:58,756] INFO crm_app.views: - Lead ID: 4, Name: india lead3
+[2025-07-30 11:26:58,756] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:58,756] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:58,757] INFO crm_app.views: - Lead ID: 5, Name: india lead4
+[2025-07-30 11:26:58,757] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:58,757] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:58,757] INFO crm_app.views: - Lead ID: 6, Name: india lead 5
+[2025-07-30 11:26:58,757] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:26:58,757] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:26:58,758] INFO crm_app.views: Applied sorting: -created_at
+[2025-07-30 11:26:58,761] INFO crm_app.views: Final leads count: 11
+[2025-07-30 11:26:58,765] INFO crm_app.views: === Finishing leads_page view ===
+[2025-07-30 11:27:00,512] INFO django.utils.autoreload: C:\Users\kodid\OneDrive\Desktop\store_1\crm2\crm accounts backup\crm\crm_app\views.py changed, reloading.
+[2025-07-30 11:27:03,612] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 11:27:44,435] INFO django.utils.autoreload: C:\Users\kodid\OneDrive\Desktop\store_1\crm2\crm accounts backup\crm\crm_app\views.py changed, reloading.
+[2025-07-30 11:27:46,831] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 11:27:50,375] INFO django.utils.autoreload: C:\Users\kodid\OneDrive\Desktop\store_1\crm2\crm accounts backup\crm\crm_app\views.py changed, reloading.
+[2025-07-30 11:27:51,351] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 11:29:38,137] INFO crm_app.views: === Starting leads_page view ===
+[2025-07-30 11:29:38,138] INFO crm_app.views: Authenticated user (from @login_required): INDIA_USER_1 (ID: 4), IsAuthenticated: True
+[2025-07-30 11:29:38,141] INFO crm_app.views: UserProfile found for INDIA_USER_1. Manager from profile: INDIAmanager.
+[2025-07-30 11:29:38,144] INFO crm_app.views: Sort parameters - field: -created_at, direction: desc
+[2025-07-30 11:29:38,145] INFO crm_app.views: Building leads queryset with conditions:
+[2025-07-30 11:29:38,145] INFO crm_app.views:  - Including leads assigned to: INDIA_USER_1 (ID: 4)
+[2025-07-30 11:29:38,145] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIA_USER_1' (current user)
+[2025-07-30 11:29:38,145] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIAmanager' (current user's manager)
+[2025-07-30 11:29:38,145] INFO crm_app.views: Final query structure: (Assigned to 'INDIA_USER_1') OR (IsUnassigned AND (LeadManager='INDIA_USER_1' OR LeadManager='INDIAmanager'))
+[2025-07-30 11:29:38,157] INFO crm_app.views: Initial query count: 11
+[2025-07-30 11:29:38,157] INFO crm_app.views: Sample of leads found:
+[2025-07-30 11:29:38,161] INFO crm_app.views: - Lead ID: 2, Name: india lead 1
+[2025-07-30 11:29:38,163] INFO crm_app.views:   Assigned to: INDIA_USER_1
+[2025-07-30 11:29:38,164] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:29:38,164] INFO crm_app.views: - Lead ID: 3, Name: india lead2
+[2025-07-30 11:29:38,164] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:29:38,164] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:29:38,165] INFO crm_app.views: - Lead ID: 4, Name: india lead3
+[2025-07-30 11:29:38,165] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:29:38,165] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:29:38,165] INFO crm_app.views: - Lead ID: 5, Name: india lead4
+[2025-07-30 11:29:38,165] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:29:38,165] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:29:38,166] INFO crm_app.views: - Lead ID: 6, Name: india lead 5
+[2025-07-30 11:29:38,166] INFO crm_app.views:   Assigned to: None
+[2025-07-30 11:29:38,166] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 11:29:38,166] INFO crm_app.views: Applied sorting: -created_at
+[2025-07-30 11:29:38,168] INFO crm_app.views: Final leads count: 11
+[2025-07-30 11:29:38,190] INFO crm_app.views: === Finishing leads_page view ===
+[2025-07-30 11:43:00,365] INFO crm_app.views: === Starting login_user view ===
+[2025-07-30 11:43:00,377] INFO crm_app.views: Login attempt for username: 'UAE_USER_1' (received from request data)
+[2025-07-30 11:43:00,959] INFO crm_app.views: authenticate() returned User: ID=5, Username='UAE_USER_1', IsActive=True
+[2025-07-30 11:43:00,959] INFO crm_app.views: Authentication result (overall): Success
+[2025-07-30 11:43:00,959] INFO crm_app.views: Calling django.contrib.auth.login() with User: ID=5, Username='UAE_USER_1'
+[2025-07-30 11:43:00,995] INFO crm_app.views: After login() call, request.user is: ID=5, Username='UAE_USER_1'
+[2025-07-30 11:43:00,996] INFO crm_app.views: Session _auth_user_id after login(): 5
+[2025-07-30 11:43:00,996] INFO crm_app.views: Session auth_user_id (custom) after login(): None
+[2025-07-30 11:43:01,003] INFO crm_app.views: Found user profile - Manager username: UAEmanager
+[2025-07-30 11:43:01,005] INFO crm_app.views: Stored in session - User ID: 5, Manager: UAEmanager
+[2025-07-30 11:43:01,007] INFO crm_app.views: Login from IP: 127.0.0.1
+[2025-07-30 11:43:01,022] INFO crm_app.views: === Login successful ===
+[2025-07-30 11:43:03,221] INFO crm_app.views: === Starting leads_page view ===
+[2025-07-30 11:43:03,222] INFO crm_app.views: Authenticated user (from @login_required): UAE_USER_1 (ID: 5), IsAuthenticated: True
+[2025-07-30 11:43:03,226] INFO crm_app.views: UserProfile found for UAE_USER_1. Manager from profile: UAEmanager.
+[2025-07-30 11:43:03,228] INFO crm_app.views: Sort parameters - field: -created_at, direction: desc
+[2025-07-30 11:43:03,228] INFO crm_app.views: Building leads queryset with conditions:
+[2025-07-30 11:43:03,229] INFO crm_app.views:  - Including leads assigned to: UAE_USER_1 (ID: 5)
+[2025-07-30 11:43:03,229] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'UAE_USER_1' (current user)
+[2025-07-30 11:43:03,233] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'UAEmanager' (current user's manager)
+[2025-07-30 11:43:03,233] INFO crm_app.views: Final query structure: (Assigned to 'UAE_USER_1') OR (IsUnassigned AND (LeadManager='UAE_USER_1' OR LeadManager='UAEmanager'))
+[2025-07-30 11:43:03,243] INFO crm_app.views: Initial query count: 0
+[2025-07-30 11:43:03,244] INFO crm_app.views: Sample of leads found:
+[2025-07-30 11:43:03,245] INFO crm_app.views: Applied sorting: -created_at
+[2025-07-30 11:43:03,249] INFO crm_app.views: Final leads count: 0
+[2025-07-30 11:43:03,261] INFO crm_app.views: === Finishing leads_page view ===
+[2025-07-30 11:51:39,620] INFO django.utils.autoreload: C:\Users\kodid\OneDrive\Desktop\store_1\crm2\crm accounts backup\crm\crm_app\views.py changed, reloading.
+[2025-07-30 11:51:43,170] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 11:52:12,531] WARNING django.request: Not Found: /favicon.ico
+[2025-07-30 12:02:33,571] INFO django.utils.autoreload: C:\Users\kodid\OneDrive\Desktop\store_1\crm2\crm accounts backup\crm\crm_app\views.py changed, reloading.
+[2025-07-30 12:02:36,623] INFO django.utils.autoreload: Watching for file changes with StatReloader
+[2025-07-30 12:03:27,140] WARNING django.request: Not Found: /favicon.ico
+[2025-07-30 12:03:49,083] INFO crm_app.views: === Starting login_user view ===
+[2025-07-30 12:03:49,083] INFO crm_app.views: Login attempt for username: 'INDIA_USER_1' (received from request data)
+[2025-07-30 12:03:49,481] INFO crm_app.views: authenticate() returned User: ID=4, Username='INDIA_USER_1', IsActive=True
+[2025-07-30 12:03:49,482] INFO crm_app.views: Authentication result (overall): Success
+[2025-07-30 12:03:49,483] INFO crm_app.views: Calling django.contrib.auth.login() with User: ID=4, Username='INDIA_USER_1'
+[2025-07-30 12:03:49,498] INFO crm_app.views: After login() call, request.user is: ID=4, Username='INDIA_USER_1'
+[2025-07-30 12:03:49,498] INFO crm_app.views: Session _auth_user_id after login(): 4
+[2025-07-30 12:03:49,498] INFO crm_app.views: Session auth_user_id (custom) after login(): None
+[2025-07-30 12:03:49,503] INFO crm_app.views: Found user profile - Manager username: INDIAmanager
+[2025-07-30 12:03:49,515] INFO crm_app.views: Stored in session - User ID: 4, Manager: INDIAmanager
+[2025-07-30 12:03:49,515] INFO crm_app.views: Login from IP: 127.0.0.1
+[2025-07-30 12:03:49,522] INFO crm_app.views: === Login successful ===
+[2025-07-30 12:04:13,270] INFO crm_app.views: === Starting leads_page view ===
+[2025-07-30 12:04:13,270] INFO crm_app.views: Authenticated user (from @login_required): INDIA_USER_1 (ID: 4), IsAuthenticated: True
+[2025-07-30 12:04:13,273] INFO crm_app.views: UserProfile found for INDIA_USER_1. Manager from profile: INDIAmanager.
+[2025-07-30 12:04:13,274] INFO crm_app.views: Sort parameters - field: -created_at, direction: desc
+[2025-07-30 12:04:13,275] INFO crm_app.views: Building leads queryset with conditions:
+[2025-07-30 12:04:13,275] INFO crm_app.views:  - Including leads assigned to: INDIA_USER_1 (ID: 4)
+[2025-07-30 12:04:13,275] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIA_USER_1' (current user)
+[2025-07-30 12:04:13,275] INFO crm_app.views:  - Including unassigned leads where Lead.manager_username is: 'INDIAmanager' (current user's manager)
+[2025-07-30 12:04:13,276] INFO crm_app.views: Final query structure: (Assigned to 'INDIA_USER_1') OR (IsUnassigned AND (LeadManager='INDIA_USER_1' OR LeadManager='INDIAmanager'))
+[2025-07-30 12:04:13,285] INFO crm_app.views: Initial query count: 11
+[2025-07-30 12:04:13,286] INFO crm_app.views: Sample of leads found:
+[2025-07-30 12:04:13,288] INFO crm_app.views: - Lead ID: 2, Name: india lead 1
+[2025-07-30 12:04:13,290] INFO crm_app.views:   Assigned to: INDIA_USER_1
+[2025-07-30 12:04:13,290] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 12:04:13,290] INFO crm_app.views: - Lead ID: 3, Name: india lead2
+[2025-07-30 12:04:13,290] INFO crm_app.views:   Assigned to: None
+[2025-07-30 12:04:13,291] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 12:04:13,291] INFO crm_app.views: - Lead ID: 4, Name: india lead3
+[2025-07-30 12:04:13,291] INFO crm_app.views:   Assigned to: None
+[2025-07-30 12:04:13,291] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 12:04:13,291] INFO crm_app.views: - Lead ID: 5, Name: india lead4
+[2025-07-30 12:04:13,291] INFO crm_app.views:   Assigned to: None
+[2025-07-30 12:04:13,291] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 12:04:13,292] INFO crm_app.views: - Lead ID: 6, Name: india lead 5
+[2025-07-30 12:04:13,292] INFO crm_app.views:   Assigned to: None
+[2025-07-30 12:04:13,292] INFO crm_app.views:   Manager username: INDIAmanager
+[2025-07-30 12:04:13,292] INFO crm_app.views: Applied sorting: -created_at
+[2025-07-30 12:04:13,294] INFO crm_app.views: Final leads count: 11
+[2025-07-30 12:04:13,297] INFO crm_app.views: === Finishing leads_page view ===
+[2025-07-30 12:04:30,087] WARNING django.request: Not Found: /favicon.ico
